@@ -6,12 +6,13 @@ import {
   MessageSquare, Clock, CheckCircle, AlertCircle,
   Download, Share2, Star, Globe, Users, BookOpen
 } from 'lucide-react';
-import { getExpertById } from '../data/mockExperts';
+import { getExpertByIdFromAll } from '../data/mockExperts';
+import StarRating from './StarRating';
 
 const ExpertProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const expert = getExpertById(id);
+  const expert = getExpertByIdFromAll(id);
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!expert) {
@@ -116,6 +117,20 @@ const ExpertProfile = () => {
               </div>
               
               <p className="text-blue-100 mt-2">{expert.industry} • {expert.function}</p>
+              
+              {/* Rating Display */}
+              {expert.rating && (
+                <div className="mt-3 flex justify-center md:justify-start">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                    <StarRating 
+                      rating={expert.rating} 
+                      reviewCount={expert.reviewCount}
+                      size="lg"
+                      interactive={false}
+                    />
+                  </div>
+                </div>
+              )}
               
               <div className="flex flex-wrap gap-4 mt-4 text-white justify-center md:justify-start">
                 <div className="flex items-center space-x-1">
@@ -241,6 +256,20 @@ const ExpertProfile = () => {
                     <span className="text-sm text-gray-600">Function</span>
                     <span className="font-semibold">{expert.function}</span>
                   </div>
+                  {expert.rating && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Rating</span>
+                      <div className="flex items-center space-x-1">
+                        <StarRating 
+                          rating={expert.rating} 
+                          reviewCount={0}
+                          size="sm"
+                          interactive={false}
+                          showReviewCount={false}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

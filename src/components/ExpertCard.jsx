@@ -1,6 +1,7 @@
 import React from 'react';
-import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle, Brain, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import StarRating from './StarRating';
 
 const ExpertCard = ({ expert, variant = 'default' }) => {
   const getAvailabilityIcon = () => {
@@ -41,9 +42,17 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">{expert.expertise[0]}</p>
               </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor()}`}>
-                {expert.type}
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor()}`}>
+                  {expert.type}
+                </span>
+                {expert.isAIGenerated && (
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 flex items-center space-x-1">
+                    <Brain className="h-3 w-3" />
+                    <span>Frank</span>
+                  </span>
+                )}
+              </div>
             </div>
             
             <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-500">
@@ -60,6 +69,18 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
                 <span>{expert.availability}</span>
               </div>
             </div>
+            
+            {/* Rating Display */}
+            {expert.rating && (
+              <div className="mt-2">
+                <StarRating 
+                  rating={expert.rating} 
+                  reviewCount={expert.reviewCount}
+                  size="sm"
+                  interactive={false}
+                />
+              </div>
+            )}
             
             {expert.expertise.length > 1 && (
               <div className="flex flex-wrap gap-1 mt-3">
@@ -96,10 +117,16 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
             className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
           />
         </div>
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 right-4 flex items-center space-x-2">
           <span className={`px-3 py-1 text-sm font-medium rounded-full ${getTypeColor()}`}>
             {expert.type}
           </span>
+          {expert.isAIGenerated && (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white flex items-center space-x-1">
+              <Sparkles className="h-3 w-3" />
+              <span>Frank</span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -136,6 +163,18 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
           <p className="text-gray-700 text-sm leading-relaxed mb-4">
             {expert.bio}
           </p>
+        )}
+
+        {/* Rating Display */}
+        {expert.rating && (
+          <div className="mb-4 flex justify-center">
+            <StarRating 
+              rating={expert.rating} 
+              reviewCount={expert.reviewCount}
+              size="md"
+              interactive={false}
+            />
+          </div>
         )}
 
         <div className="mb-4">

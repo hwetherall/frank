@@ -22,7 +22,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 18,
     certifications: ['PE - Nuclear', 'NRC Senior Reactor Operator'],
-    bio: 'Dr. Chen is a leading expert in nuclear engineering with extensive experience in reactor design and safety systems. She has consulted for major utilities across North America.'
+    bio: 'Dr. Chen is a leading expert in nuclear engineering with extensive experience in reactor design and safety systems. She has consulted for major utilities across North America.',
+    rating: 4.8,
+    reviewCount: 23
   },
   {
     id: 'int-002',
@@ -47,7 +49,9 @@ export const mockExperts = [
     availability: 'Busy',
     yearsExperience: 15,
     certifications: ['CFA', 'MBA - Wharton'],
-    bio: 'Marcus has been instrumental in funding over 50 startups, with a focus on transformative technologies. His expertise spans from seed to growth stage investments.'
+    bio: 'Marcus has been instrumental in funding over 50 startups, with a focus on transformative technologies. His expertise spans from seed to growth stage investments.',
+    rating: 4.9,
+    reviewCount: 41
   },
   {
     id: 'int-003',
@@ -72,7 +76,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 20,
     certifications: ['PhD - MIT', 'IEEE Fellow'],
-    bio: 'Dr. Patel pioneered several breakthrough technologies in industrial robotics, including adaptive manufacturing systems now used by Fortune 500 companies.'
+    bio: 'Dr. Patel pioneered several breakthrough technologies in industrial robotics, including adaptive manufacturing systems now used by Fortune 500 companies.',
+    rating: 4.7,
+    reviewCount: 18
   },
   {
     id: 'int-004',
@@ -97,7 +103,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 12,
     certifications: ['PhD - Stanford', 'Google Cloud ML Engineer'],
-    bio: 'Dr. Zhang has been at the forefront of AI research, contributing to major advances in transformer architectures and practical ML applications.'
+    bio: 'Dr. Zhang has been at the forefront of AI research, contributing to major advances in transformer architectures and practical ML applications.',
+    rating: 4.9,
+    reviewCount: 35
   },
   {
     id: 'int-005',
@@ -122,7 +130,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 25,
     certifications: ['Mining Engineering - WASM', 'Mine Manager Certificate'],
-    bio: 'Mike has revolutionized mining operations through innovative approaches to automation and sustainability, leading teams of 500+ across multiple continents.'
+    bio: 'Mike has revolutionized mining operations through innovative approaches to automation and sustainability, leading teams of 500+ across multiple continents.',
+    rating: 4.6,
+    reviewCount: 29
   },
   
   // External Experts
@@ -149,7 +159,9 @@ export const mockExperts = [
     availability: 'Unknown',
     yearsExperience: 30,
     certifications: ['PhD - Cambridge', 'Fellow of Royal Society'],
-    bio: 'Professor Wilson is internationally recognized for his work on nuclear safety frameworks adopted by over 20 countries.'
+    bio: 'Professor Wilson is internationally recognized for his work on nuclear safety frameworks adopted by over 20 countries.',
+    rating: 4.5,
+    reviewCount: 12
   },
   {
     id: 'ext-002',
@@ -174,7 +186,9 @@ export const mockExperts = [
     availability: 'Busy',
     yearsExperience: 22,
     certifications: ['MBA - Harvard', 'CPA'],
-    bio: 'Angela has been a driving force in Silicon Valley, known for identifying and nurturing breakthrough companies in their early stages.'
+    bio: 'Angela has been a driving force in Silicon Valley, known for identifying and nurturing breakthrough companies in their early stages.',
+    rating: 4.8,
+    reviewCount: 27
   },
   {
     id: 'ext-003',
@@ -199,7 +213,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 28,
     certifications: ['Professional Engineer - Japan', 'Six Sigma Black Belt'],
-    bio: 'Tanaka-san revolutionized automotive manufacturing with his innovative approach to human-robot collaboration, increasing productivity by 40% while improving safety.'
+    bio: 'Tanaka-san revolutionized automotive manufacturing with his innovative approach to human-robot collaboration, increasing productivity by 40% while improving safety.',
+    rating: 4.7,
+    reviewCount: 19
   },
   {
     id: 'ext-004',
@@ -224,7 +240,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 14,
     certifications: ['PhD - University of Toronto', 'Canada Research Chair'],
-    bio: 'Dr. Kumar bridges the gap between cutting-edge AI research and practical healthcare applications, with her work impacting millions of patients globally.'
+    bio: 'Dr. Kumar bridges the gap between cutting-edge AI research and practical healthcare applications, with her work impacting millions of patients globally.',
+    rating: 4.9,
+    reviewCount: 33
   },
   {
     id: 'ext-005',
@@ -249,7 +267,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 32,
     certifications: ['Professional Geologist', 'SME Registered Member'],
-    bio: 'Robert is known for solving the most challenging mining engineering problems, having worked on projects in over 15 countries across 6 continents.'
+    bio: 'Robert is known for solving the most challenging mining engineering problems, having worked on projects in over 15 countries across 6 continents.',
+    rating: 4.4,
+    reviewCount: 16
   }
 ];
 
@@ -285,12 +305,70 @@ export const getExpertById = (id) => {
   return mockExperts.find(expert => expert.id === id);
 };
 
+// Store for AI-generated experts (in-memory for demo)
+let aiGeneratedExperts = [];
+
 // Helper function to update expert
 export const updateExpert = (id, updatedData) => {
+  // Check in main experts first
   const index = mockExperts.findIndex(expert => expert.id === id);
   if (index !== -1) {
     mockExperts[index] = { ...mockExperts[index], ...updatedData };
     return mockExperts[index];
   }
+  
+  // Check in AI-generated experts
+  const aiIndex = aiGeneratedExperts.findIndex(expert => expert.id === id);
+  if (aiIndex !== -1) {
+    aiGeneratedExperts[aiIndex] = { ...aiGeneratedExperts[aiIndex], ...updatedData };
+    return aiGeneratedExperts[aiIndex];
+  }
+  
   return null;
+};
+
+// Helper function to add AI-generated experts to the global store
+export const addAIGeneratedExperts = (experts) => {
+  aiGeneratedExperts = [...aiGeneratedExperts, ...experts];
+};
+
+// Helper function to get all experts (including AI-generated)
+export const getAllExperts = () => {
+  return [...mockExperts, ...aiGeneratedExperts];
+};
+
+// Updated search function to include AI-generated experts
+export const searchAllExperts = (query) => {
+  if (!query || query.trim() === '') return [];
+  
+  const allExperts = getAllExperts();
+  const lowercaseQuery = query.toLowerCase();
+  const results = allExperts.filter(expert => {
+    const searchableText = [
+      expert.name,
+      expert.location,
+      expert.industry,
+      expert.function,
+      ...expert.expertise,
+      expert.notes,
+      expert.bio
+    ].join(' ').toLowerCase();
+    
+    return searchableText.includes(lowercaseQuery);
+  });
+  
+  // Sort to show internal experts first
+  return results.sort((a, b) => {
+    if (a.type === 'Internal' && b.type === 'External') return -1;
+    if (a.type === 'External' && b.type === 'Internal') return 1;
+    return 0;
+  });
+};
+
+// Updated getExpertById to check AI-generated experts too
+export const getExpertByIdFromAll = (id) => {
+  const expert = mockExperts.find(expert => expert.id === id);
+  if (expert) return expert;
+  
+  return aiGeneratedExperts.find(expert => expert.id === id);
 };
