@@ -1,0 +1,2254 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+index.html
+package.json
+postcss.config.js
+src/App.jsx
+src/components/ExpertCard.jsx
+src/components/ExpertProfile.jsx
+src/components/FindExpert.jsx
+src/components/Navigation.jsx
+src/components/UpdateExpert.jsx
+src/components/ViewDatabase.jsx
+src/data/mockExperts.js
+src/index.css
+src/main.jsx
+tailwind.config.js
+vite.config.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frank - Expert Discovery by Innovera</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "frank-expert-discovery",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.18.0",
+    "lucide-react": "^0.294.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "vite": "^5.0.8"
+  }
+}
+</file>
+
+<file path="postcss.config.js">
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+</file>
+
+<file path="src/App.jsx">
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
+import FindExpert from './components/FindExpert';
+import ViewDatabase from './components/ViewDatabase';
+import ExpertProfile from './components/ExpertProfile';
+import UpdateExpert from './components/UpdateExpert';
+
+function App() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<FindExpert />} />
+        <Route path="/database" element={<ViewDatabase />} />
+        <Route path="/expert/:id" element={<ExpertProfile />} />
+        <Route path="/update/:id" element={<UpdateExpert />} />
+      </Routes>
+    </div>
+  );
+}
+
+export default App;
+</file>
+
+<file path="src/components/ExpertCard.jsx">
+import React from 'react';
+import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const ExpertCard = ({ expert, variant = 'default' }) => {
+  const getAvailabilityIcon = () => {
+    switch (expert.availability) {
+      case 'Available':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'Busy':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const getTypeColor = () => {
+    return expert.type === 'Internal' 
+      ? 'bg-internal-green text-white' 
+      : 'bg-external-blue text-white';
+  };
+
+  if (variant === 'compact') {
+    // Compact version for search results
+    return (
+      <Link 
+        to={`/expert/${expert.id}`}
+        className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-4 border border-gray-100"
+      >
+        <div className="flex items-start space-x-4">
+          <img
+            src={expert.photo}
+            alt={expert.name}
+            className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-200"
+          />
+          <div className="flex-1">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 hover:text-frank-blue transition-colors">
+                  {expert.name}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">{expert.expertise[0]}</p>
+              </div>
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor()}`}>
+                {expert.type}
+              </span>
+            </div>
+            
+            <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-500">
+              <div className="flex items-center space-x-1">
+                <MapPin className="h-3 w-3" />
+                <span>{expert.location}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Building2 className="h-3 w-3" />
+                <span>{expert.industry}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {getAvailabilityIcon()}
+                <span>{expert.availability}</span>
+              </div>
+            </div>
+            
+            {expert.expertise.length > 1 && (
+              <div className="flex flex-wrap gap-1 mt-3">
+                {expert.expertise.slice(0, 3).map((skill, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-frank-light-gray text-xs text-gray-700 rounded-full"
+                  >
+                    {skill}
+                  </span>
+                ))}
+                {expert.expertise.length > 3 && (
+                  <span className="px-2 py-1 text-xs text-gray-500">
+                    +{expert.expertise.length - 3} more
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Default full card version
+  return (
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+      <div className="relative">
+        <div className="h-32 bg-gradient-to-r from-frank-blue to-frank-light-blue"></div>
+        <div className="absolute -bottom-12 left-6">
+          <img
+            src={expert.photo}
+            alt={expert.name}
+            className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
+          />
+        </div>
+        <div className="absolute top-4 right-4">
+          <span className={`px-3 py-1 text-sm font-medium rounded-full ${getTypeColor()}`}>
+            {expert.type}
+          </span>
+        </div>
+      </div>
+
+      <div className="pt-14 px-6 pb-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{expert.name}</h2>
+            <p className="text-gray-600 mt-1">{expert.industry} • {expert.function}</p>
+          </div>
+          <div className="flex items-center space-x-1">
+            {getAvailabilityIcon()}
+            <span className="text-sm text-gray-600">{expert.availability}</span>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center space-x-2 text-gray-600">
+            <MapPin className="h-4 w-4 text-gray-400" />
+            <span className="text-sm">{expert.location}</span>
+          </div>
+          <div className="flex items-center space-x-2 text-gray-600">
+            <Mail className="h-4 w-4 text-gray-400" />
+            <a href={`mailto:${expert.email}`} className="text-sm hover:text-frank-blue transition-colors">
+              {expert.email}
+            </a>
+          </div>
+          <div className="flex items-center space-x-2 text-gray-600">
+            <Phone className="h-4 w-4 text-gray-400" />
+            <span className="text-sm">{expert.phone}</span>
+          </div>
+        </div>
+
+        {expert.bio && (
+          <p className="text-gray-700 text-sm leading-relaxed mb-4">
+            {expert.bio}
+          </p>
+        )}
+
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Expertise Areas</h3>
+          <div className="flex flex-wrap gap-2">
+            {expert.expertise.map((skill, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-frank-light-gray text-sm text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {expert.yearsExperience && (
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div className="text-sm text-gray-600">
+              <span className="font-semibold">{expert.yearsExperience}</span> years experience
+            </div>
+            {expert.lastContact && (
+              <div className="text-sm text-gray-500">
+                Last contact: {new Date(expert.lastContact).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+        )}
+
+        <Link
+          to={`/expert/${expert.id}`}
+          className="mt-4 w-full bg-frank-blue text-white py-2 px-4 rounded-lg hover:bg-frank-blue/90 transition-colors text-center font-medium inline-block"
+        >
+          View Full Profile
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default ExpertCard;
+</file>
+
+<file path="src/components/ExpertProfile.jsx">
+import React, { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, Edit2, Mail, Phone, MapPin, Building2, 
+  Briefcase, Calendar, Award, FileText, Paperclip, 
+  MessageSquare, Clock, CheckCircle, AlertCircle,
+  Download, Share2, Star, Globe, Users, BookOpen
+} from 'lucide-react';
+import { getExpertById } from '../data/mockExperts';
+
+const ExpertProfile = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const expert = getExpertById(id);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  if (!expert) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Expert not found</h2>
+          <p className="text-gray-600 mb-4">The expert you're looking for doesn't exist.</p>
+          <Link to="/database" className="text-frank-blue hover:underline">
+            Return to Database
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const getAvailabilityStatus = () => {
+    switch (expert.availability) {
+      case 'Available':
+        return { icon: <CheckCircle className="h-5 w-5" />, color: 'text-green-500', bg: 'bg-green-50' };
+      case 'Busy':
+        return { icon: <AlertCircle className="h-5 w-5" />, color: 'text-orange-500', bg: 'bg-orange-50' };
+      default:
+        return { icon: <Clock className="h-5 w-5" />, color: 'text-gray-500', bg: 'bg-gray-50' };
+    }
+  };
+
+  const availabilityStatus = getAvailabilityStatus();
+
+  // Mock files/documents
+  const documents = [
+    { id: 1, name: 'CV_Resume.pdf', size: '2.4 MB', uploadedDate: '2024-01-15' },
+    { id: 2, name: 'Certifications.pdf', size: '1.8 MB', uploadedDate: '2024-01-10' },
+    { id: 3, name: 'Publications_List.docx', size: '856 KB', uploadedDate: '2024-01-05' }
+  ];
+
+  // Mock recent activities
+  const recentActivities = [
+    { id: 1, action: 'Completed project review', date: '2 days ago', type: 'project' },
+    { id: 2, action: 'Updated expertise areas', date: '1 week ago', type: 'update' },
+    { id: 3, action: 'Added new certification', date: '2 weeks ago', type: 'certification' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with back button */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate('/database')}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Back to Database</span>
+            </button>
+            <div className="flex space-x-3">
+              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                <Share2 className="h-5 w-5" />
+              </button>
+              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                <Download className="h-5 w-5" />
+              </button>
+              <Link
+                to={`/update/${expert.id}`}
+                className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span>Edit Expert</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Header */}
+      <div className="bg-gradient-to-r from-frank-blue to-frank-light-blue">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
+            <img
+              src={expert.photo}
+              alt={expert.name}
+              className="w-32 h-32 rounded-full border-4 border-white shadow-xl"
+            />
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
+                <h1 className="text-3xl font-bold text-white">{expert.name}</h1>
+                <div className="flex items-center justify-center md:justify-start space-x-2 mt-2 md:mt-0">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    expert.type === 'Internal' 
+                      ? 'bg-internal-green text-white' 
+                      : 'bg-external-blue text-white'
+                  }`}>
+                    {expert.type === 'Internal' ? <Users className="h-3 w-3 inline mr-1" /> : <Globe className="h-3 w-3 inline mr-1" />}
+                    {expert.type} Expert
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${availabilityStatus.bg} ${availabilityStatus.color} flex items-center space-x-1`}>
+                    {availabilityStatus.icon}
+                    <span>{expert.availability}</span>
+                  </span>
+                </div>
+              </div>
+              
+              <p className="text-blue-100 mt-2">{expert.industry} • {expert.function}</p>
+              
+              <div className="flex flex-wrap gap-4 mt-4 text-white justify-center md:justify-start">
+                <div className="flex items-center space-x-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{expert.location}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Award className="h-4 w-4" />
+                  <span>{expert.yearsExperience} years experience</span>
+                </div>
+                {expert.certifications && (
+                  <div className="flex items-center space-x-1">
+                    <BookOpen className="h-4 w-4" />
+                    <span>{expert.certifications.length} certifications</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            {['overview', 'expertise', 'notes', 'documents', 'activity'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors ${
+                  activeTab === tab
+                    ? 'border-frank-blue text-frank-blue'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Bio */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Biography</h2>
+                <p className="text-gray-700 leading-relaxed">{expert.bio}</p>
+              </div>
+
+              {/* Contact Information */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <a href={`mailto:${expert.email}`} className="text-frank-blue hover:underline">
+                        {expert.email}
+                      </a>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Phone</p>
+                      <p className="text-gray-900">{expert.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Location</p>
+                      <p className="text-gray-900">{expert.location}</p>
+                    </div>
+                  </div>
+                  {expert.lastContact && (
+                    <div className="flex items-center space-x-3">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Last Contact</p>
+                        <p className="text-gray-900">{new Date(expert.lastContact).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-8">
+              {/* Quick Stats */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Experience</span>
+                    <span className="font-semibold">{expert.yearsExperience} years</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Expertise Areas</span>
+                    <span className="font-semibold">{expert.expertise.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Type</span>
+                    <span className="font-semibold">{expert.type}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Industry</span>
+                    <span className="font-semibold">{expert.industry}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Function</span>
+                    <span className="font-semibold">{expert.function}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Certifications */}
+              {expert.certifications && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Certifications</h3>
+                  <div className="space-y-2">
+                    {expert.certifications.map((cert, index) => (
+                      <div key={index} className="flex items-start space-x-2">
+                        <Award className="h-4 w-4 text-frank-blue mt-0.5" />
+                        <span className="text-sm text-gray-700">{cert}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'expertise' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Areas of Expertise</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {expert.expertise.map((skill, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  <span className="text-gray-700">{skill}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notes' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
+              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
+                <MessageSquare className="h-4 w-4" />
+                <span>Add Note</span>
+              </button>
+            </div>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+              <div className="flex items-start space-x-3">
+                <FileText className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-gray-700">{expert.notes}</p>
+                  <p className="text-sm text-gray-500 mt-2">Last updated: {new Date(expert.lastContact).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'documents' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Files & Documents</h2>
+              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
+                <Paperclip className="h-4 w-4" />
+                <span>Upload File</span>
+              </button>
+            </div>
+            <div className="space-y-3">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="font-medium text-gray-900">{doc.name}</p>
+                      <p className="text-sm text-gray-500">{doc.size} • Uploaded {doc.uploadedDate}</p>
+                    </div>
+                  </div>
+                  <button className="p-2 text-frank-blue hover:bg-blue-50 rounded-lg transition-colors">
+                    <Download className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'activity' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activity</h2>
+            <div className="space-y-4">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3 pb-4 border-b border-gray-100 last:border-0">
+                  <div className={`p-2 rounded-full ${
+                    activity.type === 'project' ? 'bg-blue-100' :
+                    activity.type === 'update' ? 'bg-green-100' :
+                    'bg-purple-100'
+                  }`}>
+                    {activity.type === 'project' ? <Briefcase className="h-4 w-4 text-blue-600" /> :
+                     activity.type === 'update' ? <Edit2 className="h-4 w-4 text-green-600" /> :
+                     <Award className="h-4 w-4 text-purple-600" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-900">{activity.action}</p>
+                    <p className="text-sm text-gray-500 mt-1">{activity.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ExpertProfile;
+</file>
+
+<file path="src/components/FindExpert.jsx">
+import React, { useState } from 'react';
+import { Search, Sparkles, Users, Globe, TrendingUp, Award, Filter } from 'lucide-react';
+import { searchExperts } from '../data/mockExperts';
+import ExpertCard from './ExpertCard';
+
+const FindExpert = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const popularSearches = [
+    'Nuclear safety',
+    'Venture capital funding',
+    'AI and machine learning',
+    'Robotics automation',
+    'Mining operations'
+  ];
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setHasSearched(true);
+
+    // Simulate AI processing delay
+    setTimeout(() => {
+      const results = searchExperts(searchQuery);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 800);
+  };
+
+  const handleQuickSearch = (term) => {
+    setSearchQuery(term);
+    setIsSearching(true);
+    setHasSearched(true);
+
+    setTimeout(() => {
+      const results = searchExperts(term);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 800);
+  };
+
+  const internalExperts = searchResults.filter(e => e.type === 'Internal');
+  const externalExperts = searchResults.filter(e => e.type === 'External');
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-frank-blue to-frank-light-blue text-white py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-white/20 p-3 rounded-full">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold mb-4">Find Your Perfect Expert</h1>
+            <p className="text-xl text-blue-100 mb-8">
+              Connect with internal experts or discover external specialists for your project
+            </p>
+          </div>
+
+          {/* Search Box */}
+          <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Describe your project or expertise needed..."
+                className="w-full px-6 py-4 pr-32 text-gray-900 bg-white rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 text-lg"
+              />
+              <button
+                type="submit"
+                disabled={isSearching}
+                className="absolute right-2 top-2 bg-frank-blue text-white px-6 py-2 rounded-lg hover:bg-frank-blue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {isSearching ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Searching...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-5 w-5" />
+                    <span>Search</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Quick Search Tags */}
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <span className="text-sm text-blue-100">Popular searches:</span>
+            {popularSearches.map((term, index) => (
+              <button
+                key={index}
+                onClick={() => handleQuickSearch(term)}
+                className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-sm text-white transition-colors"
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      {!hasSearched && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <Users className="h-8 w-8 text-internal-green mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">5</div>
+              <div className="text-sm text-gray-600">Internal Experts</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <Globe className="h-8 w-8 text-external-blue mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">5</div>
+              <div className="text-sm text-gray-600">External Experts</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">5</div>
+              <div className="text-sm text-gray-600">Industries Covered</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <Award className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">20+</div>
+              <div className="text-sm text-gray-600">Years Avg. Experience</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Results */}
+      {hasSearched && !isSearching && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {searchResults.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No experts found</h3>
+                <p className="text-gray-600 mb-6">
+                  Try adjusting your search terms or browse our database for available experts.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setHasSearched(false);
+                  }}
+                  className="px-6 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
+                >
+                  Clear Search
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Found {searchResults.length} expert{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                </h2>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setHasSearched(false);
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-900 underline"
+                >
+                  Clear search
+                </button>
+              </div>
+
+              {/* Internal Experts Section */}
+              {internalExperts.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="bg-internal-green/10 p-2 rounded-lg">
+                      <Users className="h-5 w-5 text-internal-green" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Internal Experts</h3>
+                    <span className="px-2 py-1 bg-internal-green/10 text-internal-green text-sm rounded-full">
+                      Existing Relationships
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {internalExperts.map((expert) => (
+                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* External Experts Section */}
+              {externalExperts.length > 0 && (
+                <div>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="bg-external-blue/10 p-2 rounded-lg">
+                      <Globe className="h-5 w-5 text-external-blue" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">External Experts</h3>
+                    <span className="px-2 py-1 bg-external-blue/10 text-external-blue text-sm rounded-full">
+                      New Connections
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {externalExperts.map((expert) => (
+                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isSearching && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white rounded-lg shadow-md p-12">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-frank-blue mb-4"></div>
+              <p className="text-gray-600">AI is analyzing your request and finding the best experts...</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FindExpert;
+</file>
+
+<file path="src/components/Navigation.jsx">
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Search, Database, User, Briefcase, ChevronRight } from 'lucide-react';
+
+const Navigation = () => {
+  const location = useLocation();
+  
+  const isActive = (path) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  return (
+    <nav className="bg-gradient-to-r from-frank-blue to-frank-light-blue shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo and Brand */}
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="bg-white p-2 rounded-lg">
+                <Briefcase className="h-6 w-6 text-frank-blue" />
+              </div>
+              <div>
+                <h1 className="text-white text-xl font-bold">Frank</h1>
+                <p className="text-blue-100 text-xs">by Innovera</p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-4">
+              <Link
+                to="/"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${
+                  isActive('/') && location.pathname === '/'
+                    ? 'bg-white/20 text-white'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Search className="h-4 w-4" />
+                <span>Find Expert</span>
+              </Link>
+              
+              <Link
+                to="/database"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${
+                  isActive('/database')
+                    ? 'bg-white/20 text-white'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Database className="h-4 w-4" />
+                <span>View Database</span>
+              </Link>
+              
+              {location.pathname.startsWith('/expert/') && (
+                <div className="px-3 py-2 rounded-md text-sm font-medium bg-white/20 text-white flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span>Expert Profile</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              type="button"
+              className="bg-white/20 p-2 rounded-md text-white hover:bg-white/30 focus:outline-none"
+              aria-label="Mobile menu"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Breadcrumb for nested routes */}
+      {location.pathname !== '/' && location.pathname !== '/database' && (
+        <div className="bg-white/10 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            <div className="flex items-center space-x-2 text-sm text-blue-100">
+              <Link to="/" className="hover:text-white">Home</Link>
+              <ChevronRight className="h-4 w-4" />
+              {location.pathname.startsWith('/expert/') && (
+                <>
+                  <Link to="/database" className="hover:text-white">Database</Link>
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="text-white">Expert Profile</span>
+                </>
+              )}
+              {location.pathname.startsWith('/update/') && (
+                <>
+                  <span className="text-white">Update Expert</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+};
+
+export default Navigation;
+</file>
+
+<file path="src/components/UpdateExpert.jsx">
+import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { 
+  ArrowLeft, Save, X, Plus, Trash2, User, Mail, 
+  Phone, MapPin, Building2, Briefcase, Award, 
+  FileText, CheckCircle, AlertCircle, Clock
+} from 'lucide-react';
+import { getExpertById, updateExpert } from '../data/mockExperts';
+
+const UpdateExpert = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const originalExpert = getExpertById(id);
+  
+  const [formData, setFormData] = useState(originalExpert ? {
+    ...originalExpert,
+    newExpertise: '',
+    newCertification: ''
+  } : null);
+  
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  if (!originalExpert) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Expert not found</h2>
+          <p className="text-gray-600 mb-4">The expert you're trying to edit doesn't exist.</p>
+          <Link to="/database" className="text-frank-blue hover:underline">
+            Return to Database
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleExpertiseAdd = () => {
+    if (formData.newExpertise.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        expertise: [...prev.expertise, prev.newExpertise.trim()],
+        newExpertise: ''
+      }));
+    }
+  };
+
+  const handleExpertiseRemove = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      expertise: prev.expertise.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleCertificationAdd = () => {
+    if (formData.newCertification.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        certifications: [...(prev.certifications || []), prev.newCertification.trim()],
+        newCertification: ''
+      }));
+    }
+  };
+
+  const handleCertificationRemove = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      certifications: prev.certifications.filter((_, i) => i !== index)
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Invalid email format';
+    }
+    if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+    if (!formData.location.trim()) newErrors.location = 'Location is required';
+    if (!formData.industry) newErrors.industry = 'Industry is required';
+    if (!formData.function) newErrors.function = 'Function is required';
+    if (formData.expertise.length === 0) newErrors.expertise = 'At least one expertise area is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    // Remove temporary fields
+    const { newExpertise, newCertification, ...dataToSave } = formData;
+    
+    // Update the expert data
+    updateExpert(id, dataToSave);
+    
+    // Show success message
+    setShowSuccessMessage(true);
+    
+    // Hide message and redirect after 2 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+      navigate(`/expert/${id}`);
+    }, 2000);
+  };
+
+  const handleCancel = () => {
+    navigate(`/expert/${id}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate(`/expert/${id}`)}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span>Back to Profile</span>
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">Update Expert Information</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 animate-pulse">
+          <CheckCircle className="h-5 w-5" />
+          <span>Expert information updated successfully!</span>
+        </div>
+      )}
+
+      {/* Form */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Information */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+              <User className="h-5 w-5 text-gray-400" />
+              <span>Basic Information</span>
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue ${
+                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Expert Type
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                >
+                  <option value="Internal">Internal</option>
+                  <option value="External">External</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Availability Status
+                </label>
+                <select
+                  name="availability"
+                  value={formData.availability}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                >
+                  <option value="Available">Available</option>
+                  <option value="Busy">Busy</option>
+                  <option value="Unknown">Unknown</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Years of Experience
+                </label>
+                <input
+                  type="number"
+                  name="yearsExperience"
+                  value={formData.yearsExperience}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+              <Phone className="h-5 w-5 text-gray-400" />
+              <span>Contact Information</span>
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address *
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue ${
+                      errors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                </div>
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number *
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue ${
+                      errors.phone ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                </div>
+                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location *
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue ${
+                      errors.location ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                </div>
+                {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Professional Information */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+              <Briefcase className="h-5 w-5 text-gray-400" />
+              <span>Professional Information</span>
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Industry *
+                </label>
+                <select
+                  name="industry"
+                  value={formData.industry}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue ${
+                    errors.industry ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select Industry</option>
+                  <option value="Nuclear">Nuclear</option>
+                  <option value="Venture Capital">Venture Capital</option>
+                  <option value="Robotics">Robotics</option>
+                  <option value="AI/ML">AI/ML</option>
+                  <option value="Mining">Mining</option>
+                </select>
+                {errors.industry && <p className="text-red-500 text-xs mt-1">{errors.industry}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Function *
+                </label>
+                <select
+                  name="function"
+                  value={formData.function}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue ${
+                    errors.function ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select Function</option>
+                  <option value="Engineering">Engineering</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Research">Research</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Strategy">Strategy</option>
+                </select>
+                {errors.function && <p className="text-red-500 text-xs mt-1">{errors.function}</p>}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Biography
+                </label>
+                <textarea
+                  name="bio"
+                  value={formData.bio || ''}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                  placeholder="Brief description of the expert's background and achievements..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Expertise Areas */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+              <Award className="h-5 w-5 text-gray-400" />
+              <span>Expertise Areas</span>
+            </h2>
+            
+            {errors.expertise && <p className="text-red-500 text-sm mb-4">{errors.expertise}</p>}
+            
+            <div className="space-y-3 mb-4">
+              {formData.expertise.map((skill, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700">{skill}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleExpertiseRemove(index)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={formData.newExpertise}
+                onChange={(e) => setFormData(prev => ({ ...prev, newExpertise: e.target.value }))}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleExpertiseAdd();
+                  }
+                }}
+                placeholder="Add new expertise area..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+              />
+              <button
+                type="button"
+                onClick={handleExpertiseAdd}
+                className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Certifications */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+              <Award className="h-5 w-5 text-gray-400" />
+              <span>Certifications</span>
+            </h2>
+            
+            <div className="space-y-3 mb-4">
+              {(formData.certifications || []).map((cert, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700">{cert}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCertificationRemove(index)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={formData.newCertification}
+                onChange={(e) => setFormData(prev => ({ ...prev, newCertification: e.target.value }))}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCertificationAdd();
+                  }
+                }}
+                placeholder="Add new certification..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+              />
+              <button
+                type="button"
+                onClick={handleCertificationAdd}
+                className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-gray-400" />
+              <span>Notes</span>
+            </h2>
+            
+            <textarea
+              name="notes"
+              value={formData.notes || ''}
+              onChange={handleInputChange}
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+              placeholder="Additional notes about this expert..."
+            />
+          </div>
+
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-4 pb-8">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center space-x-2"
+            >
+              <X className="h-4 w-4" />
+              <span>Cancel</span>
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2"
+            >
+              <Save className="h-4 w-4" />
+              <span>Save Changes</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default UpdateExpert;
+</file>
+
+<file path="src/components/ViewDatabase.jsx">
+import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { 
+  Search, Filter, ChevronDown, MapPin, Building2, 
+  Briefcase, Users, Globe, CheckCircle, AlertCircle, 
+  Clock, ExternalLink, Download, RefreshCw 
+} from 'lucide-react';
+import { mockExperts } from '../data/mockExperts';
+
+const ViewDatabase = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [locationFilter, setLocationFilter] = useState('all');
+  const [industryFilter, setIndustryFilter] = useState('all');
+  const [functionFilter, setFunctionFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(true);
+
+  // Extract unique values for filters
+  const locations = [...new Set(mockExperts.map(e => e.location))].sort();
+  const industries = [...new Set(mockExperts.map(e => e.industry))].sort();
+  const functions = [...new Set(mockExperts.map(e => e.function))].sort();
+
+  // Filter experts based on all criteria
+  const filteredExperts = useMemo(() => {
+    return mockExperts.filter(expert => {
+      const matchesSearch = searchTerm === '' || 
+        expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expert.expertise.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        expert.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expert.location.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesLocation = locationFilter === 'all' || expert.location === locationFilter;
+      const matchesIndustry = industryFilter === 'all' || expert.industry === industryFilter;
+      const matchesFunction = functionFilter === 'all' || expert.function === functionFilter;
+      const matchesType = typeFilter === 'all' || expert.type === typeFilter;
+
+      return matchesSearch && matchesLocation && matchesIndustry && matchesFunction && matchesType;
+    });
+  }, [searchTerm, locationFilter, industryFilter, functionFilter, typeFilter]);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setLocationFilter('all');
+    setIndustryFilter('all');
+    setFunctionFilter('all');
+    setTypeFilter('all');
+  };
+
+  const getAvailabilityIcon = (availability) => {
+    switch (availability) {
+      case 'Available':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'Busy':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const activeFiltersCount = [
+    locationFilter !== 'all',
+    industryFilter !== 'all',
+    functionFilter !== 'all',
+    typeFilter !== 'all'
+  ].filter(Boolean).length;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Expert Database</h1>
+              <p className="mt-1 text-sm text-gray-600">
+                Browse and manage all {mockExperts.length} experts in the system
+              </p>
+            </div>
+            <div className="mt-4 md:mt-0 flex space-x-3">
+              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </button>
+              <button className="px-4 py-2 bg-white text-frank-blue border border-frank-blue rounded-lg hover:bg-frank-light-gray transition-colors flex items-center space-x-2">
+                <RefreshCw className="h-4 w-4" />
+                <span>Sync</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mt-6 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name, expertise, location, or industry..."
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 font-medium"
+            >
+              <Filter className="h-4 w-4" />
+              <span>Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className="px-2 py-1 bg-frank-blue text-white text-xs rounded-full">
+                  {activeFiltersCount}
+                </span>
+              )}
+              <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={resetFilters}
+                className="text-sm text-gray-600 hover:text-gray-900 underline"
+              >
+                Reset all filters
+              </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <select
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                >
+                  <option value="all">All Locations</option>
+                  {locations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                <select
+                  value={industryFilter}
+                  onChange={(e) => setIndustryFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                >
+                  <option value="all">All Industries</option>
+                  {industries.map(ind => (
+                    <option key={ind} value={ind}>{ind}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Function</label>
+                <select
+                  value={functionFilter}
+                  onChange={(e) => setFunctionFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                >
+                  <option value="all">All Functions</option>
+                  {functions.map(func => (
+                    <option key={func} value={func}>{func}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expert Type</label>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+                >
+                  <option value="all">All Types</option>
+                  <option value="Internal">Internal Only</option>
+                  <option value="External">External Only</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Results Count */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <p className="text-sm text-gray-600">
+          Showing <span className="font-semibold">{filteredExperts.length}</span> of{' '}
+          <span className="font-semibold">{mockExperts.length}</span> experts
+        </p>
+      </div>
+
+      {/* Table */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Expert
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Industry
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Function
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredExperts.map((expert) => (
+                  <tr key={expert.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <img
+                          className="h-10 w-10 rounded-full"
+                          src={expert.photo}
+                          alt={expert.name}
+                        />
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{expert.name}</div>
+                          <div className="text-sm text-gray-500">{expert.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-900">
+                        <MapPin className="h-3 w-3 mr-1 text-gray-400" />
+                        {expert.location}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-900">
+                        <Building2 className="h-3 w-3 mr-1 text-gray-400" />
+                        {expert.industry}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-900">
+                        <Briefcase className="h-3 w-3 mr-1 text-gray-400" />
+                        {expert.function}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        expert.type === 'Internal' 
+                          ? 'bg-internal-green text-white' 
+                          : 'bg-external-blue text-white'
+                      }`}>
+                        {expert.type === 'Internal' ? (
+                          <Users className="h-3 w-3 mr-1" />
+                        ) : (
+                          <Globe className="h-3 w-3 mr-1" />
+                        )}
+                        {expert.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm">
+                        {getAvailabilityIcon(expert.availability)}
+                        <span className="ml-1 text-gray-900">{expert.availability}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <Link
+                        to={`/expert/${expert.id}`}
+                        className="text-frank-blue hover:text-frank-blue/80 flex items-center space-x-1"
+                      >
+                        <span>View Profile</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredExperts.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No experts found matching your criteria</p>
+              <button
+                onClick={resetFilters}
+                className="mt-4 px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ViewDatabase;
+</file>
+
+<file path="src/data/mockExperts.js">
+export const mockExperts = [
+  // Internal Experts
+  {
+    id: 'int-001',
+    name: 'Dr. Sarah Chen',
+    photo: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=10B981&color=fff&size=200',
+    location: 'Chicago, IL',
+    industry: 'Nuclear',
+    function: 'Engineering',
+    type: 'Internal',
+    email: 'sarah.chen@innovera.com',
+    phone: '+1 (312) 555-0101',
+    expertise: [
+      'Nuclear Reactor Design',
+      'Safety Systems Engineering',
+      'Thermal Hydraulics',
+      'Nuclear Fuel Management',
+      'Regulatory Compliance'
+    ],
+    notes: 'Led the safety review for 3 major nuclear facilities. Published 15 papers on reactor safety. Fluent in Mandarin and English. Available for complex safety assessments and regulatory reviews.',
+    lastContact: '2024-01-15',
+    availability: 'Available',
+    yearsExperience: 18,
+    certifications: ['PE - Nuclear', 'NRC Senior Reactor Operator'],
+    bio: 'Dr. Chen is a leading expert in nuclear engineering with extensive experience in reactor design and safety systems. She has consulted for major utilities across North America.'
+  },
+  {
+    id: 'int-002',
+    name: 'Marcus Rodriguez',
+    photo: 'https://ui-avatars.com/api/?name=Marcus+Rodriguez&background=10B981&color=fff&size=200',
+    location: 'New York, NY',
+    industry: 'Venture Capital',
+    function: 'Finance',
+    type: 'Internal',
+    email: 'marcus.rodriguez@innovera.com',
+    phone: '+1 (212) 555-0102',
+    expertise: [
+      'Series A/B Funding',
+      'Due Diligence',
+      'Portfolio Management',
+      'Tech Startup Valuation',
+      'Exit Strategy Planning',
+      'LP Relations'
+    ],
+    notes: 'Successfully raised $2.3B across 4 funds. Portfolio includes 3 unicorns. Strong network in Silicon Valley and NYC. Specializes in deep tech and clean energy investments.',
+    lastContact: '2024-01-20',
+    availability: 'Busy',
+    yearsExperience: 15,
+    certifications: ['CFA', 'MBA - Wharton'],
+    bio: 'Marcus has been instrumental in funding over 50 startups, with a focus on transformative technologies. His expertise spans from seed to growth stage investments.'
+  },
+  {
+    id: 'int-003',
+    name: 'Dr. Raj Patel',
+    photo: 'https://ui-avatars.com/api/?name=Raj+Patel&background=10B981&color=fff&size=200',
+    location: 'Singapore',
+    industry: 'Robotics',
+    function: 'Research',
+    type: 'Internal',
+    email: 'raj.patel@innovera.com',
+    phone: '+65 8555-0103',
+    expertise: [
+      'Industrial Automation',
+      'Computer Vision',
+      'Motion Planning',
+      'Human-Robot Interaction',
+      'Manufacturing Robotics',
+      'AI Integration'
+    ],
+    notes: 'Holds 22 patents in robotics. Former lead at Boston Dynamics. Currently working on autonomous manufacturing systems. Available for consulting on large-scale automation projects.',
+    lastContact: '2024-01-18',
+    availability: 'Available',
+    yearsExperience: 20,
+    certifications: ['PhD - MIT', 'IEEE Fellow'],
+    bio: 'Dr. Patel pioneered several breakthrough technologies in industrial robotics, including adaptive manufacturing systems now used by Fortune 500 companies.'
+  },
+  {
+    id: 'int-004',
+    name: 'Dr. Lisa Zhang',
+    photo: 'https://ui-avatars.com/api/?name=Lisa+Zhang&background=10B981&color=fff&size=200',
+    location: 'San Francisco, CA',
+    industry: 'AI/ML',
+    function: 'Research',
+    type: 'Internal',
+    email: 'lisa.zhang@innovera.com',
+    phone: '+1 (415) 555-0104',
+    expertise: [
+      'Deep Learning',
+      'Natural Language Processing',
+      'Computer Vision',
+      'Reinforcement Learning',
+      'MLOps',
+      'Transformer Models'
+    ],
+    notes: 'Former Google Brain researcher. Published 40+ papers in top ML conferences. Expert in large language models and their applications. Currently leading our AI initiatives.',
+    lastContact: '2024-01-22',
+    availability: 'Available',
+    yearsExperience: 12,
+    certifications: ['PhD - Stanford', 'Google Cloud ML Engineer'],
+    bio: 'Dr. Zhang has been at the forefront of AI research, contributing to major advances in transformer architectures and practical ML applications.'
+  },
+  {
+    id: 'int-005',
+    name: 'Mike Thompson',
+    photo: 'https://ui-avatars.com/api/?name=Mike+Thompson&background=10B981&color=fff&size=200',
+    location: 'Perth, Australia',
+    industry: 'Mining',
+    function: 'Operations',
+    type: 'Internal',
+    email: 'mike.thompson@innovera.com',
+    phone: '+61 8 5555 0105',
+    expertise: [
+      'Open Pit Mining',
+      'Mine Planning',
+      'Equipment Optimization',
+      'Safety Management',
+      'Environmental Compliance',
+      'Cost Reduction Strategies'
+    ],
+    notes: 'Managed operations for 5 major mines across Australia and Chile. Reduced operational costs by 30% at Rio Tinto sites. Expert in autonomous mining equipment deployment.',
+    lastContact: '2024-01-19',
+    availability: 'Available',
+    yearsExperience: 25,
+    certifications: ['Mining Engineering - WASM', 'Mine Manager Certificate'],
+    bio: 'Mike has revolutionized mining operations through innovative approaches to automation and sustainability, leading teams of 500+ across multiple continents.'
+  },
+  
+  // External Experts
+  {
+    id: 'ext-001',
+    name: 'Prof. James Wilson',
+    photo: 'https://ui-avatars.com/api/?name=James+Wilson&background=3B82F6&color=fff&size=200',
+    location: 'London, UK',
+    industry: 'Nuclear',
+    function: 'Strategy',
+    type: 'External',
+    email: 'j.wilson@oxfordnuclear.ac.uk',
+    phone: '+44 20 5555 0201',
+    expertise: [
+      'Nuclear Safety Protocols',
+      'International Regulations',
+      'Risk Assessment',
+      'Emergency Response Planning',
+      'Decommissioning Strategies',
+      'Waste Management'
+    ],
+    notes: 'Oxford professor and IAEA consultant. Written 3 textbooks on nuclear safety. Advises UK government on nuclear policy. Available for high-level strategic consulting.',
+    lastContact: '2024-01-10',
+    availability: 'Unknown',
+    yearsExperience: 30,
+    certifications: ['PhD - Cambridge', 'Fellow of Royal Society'],
+    bio: 'Professor Wilson is internationally recognized for his work on nuclear safety frameworks adopted by over 20 countries.'
+  },
+  {
+    id: 'ext-002',
+    name: 'Angela Foster',
+    photo: 'https://ui-avatars.com/api/?name=Angela+Foster&background=3B82F6&color=fff&size=200',
+    location: 'Silicon Valley, CA',
+    industry: 'Venture Capital',
+    function: 'Finance',
+    type: 'External',
+    email: 'angela@fosteri.com',
+    phone: '+1 (650) 555-0202',
+    expertise: [
+      'Series A/B Venture Funding',
+      'Growth Capital',
+      'Board Governance',
+      'Startup Scaling',
+      'Market Analysis',
+      'Term Sheet Negotiation'
+    ],
+    notes: 'Partner at Sequoia Capital for 10 years. Currently runs own fund focused on climate tech. Invested in 8 companies that achieved $1B+ valuations.',
+    lastContact: '2023-12-15',
+    availability: 'Busy',
+    yearsExperience: 22,
+    certifications: ['MBA - Harvard', 'CPA'],
+    bio: 'Angela has been a driving force in Silicon Valley, known for identifying and nurturing breakthrough companies in their early stages.'
+  },
+  {
+    id: 'ext-003',
+    name: 'Hiroshi Tanaka',
+    photo: 'https://ui-avatars.com/api/?name=Hiroshi+Tanaka&background=3B82F6&color=fff&size=200',
+    location: 'Tokyo, Japan',
+    industry: 'Robotics',
+    function: 'Engineering',
+    type: 'External',
+    email: 'tanaka@tokyorobotics.jp',
+    phone: '+81 3 5555 0203',
+    expertise: [
+      'Industrial Robotics',
+      'Precision Manufacturing',
+      'Collaborative Robots',
+      'Sensor Integration',
+      'Quality Control Systems',
+      'Lean Manufacturing'
+    ],
+    notes: 'Former Toyota chief robotics engineer. Developed cobots used in 200+ factories worldwide. Speaks Japanese, English, and Mandarin. Expert in Japanese manufacturing principles.',
+    lastContact: '2024-01-05',
+    availability: 'Available',
+    yearsExperience: 28,
+    certifications: ['Professional Engineer - Japan', 'Six Sigma Black Belt'],
+    bio: 'Tanaka-san revolutionized automotive manufacturing with his innovative approach to human-robot collaboration, increasing productivity by 40% while improving safety.'
+  },
+  {
+    id: 'ext-004',
+    name: 'Dr. Amanda Kumar',
+    photo: 'https://ui-avatars.com/api/?name=Amanda+Kumar&background=3B82F6&color=fff&size=200',
+    location: 'Toronto, Canada',
+    industry: 'AI/ML',
+    function: 'Research',
+    type: 'External',
+    email: 'akumar@vectorinstitute.ca',
+    phone: '+1 (416) 555-0204',
+    expertise: [
+      'Deep Learning Applications',
+      'Healthcare AI',
+      'Ethical AI',
+      'Federated Learning',
+      'Neural Architecture Search',
+      'AI Safety'
+    ],
+    notes: 'Director at Vector Institute. Pioneered AI applications in medical imaging that are FDA approved. Published 60+ papers. Strong advocate for responsible AI development.',
+    lastContact: '2024-01-12',
+    availability: 'Available',
+    yearsExperience: 14,
+    certifications: ['PhD - University of Toronto', 'Canada Research Chair'],
+    bio: 'Dr. Kumar bridges the gap between cutting-edge AI research and practical healthcare applications, with her work impacting millions of patients globally.'
+  },
+  {
+    id: 'ext-005',
+    name: 'Robert Clarke',
+    photo: 'https://ui-avatars.com/api/?name=Robert+Clarke&background=3B82F6&color=fff&size=200',
+    location: 'Vancouver, Canada',
+    industry: 'Mining',
+    function: 'Engineering',
+    type: 'External',
+    email: 'rclarke@miningconsult.ca',
+    phone: '+1 (604) 555-0205',
+    expertise: [
+      'Underground Mining',
+      'Geological Modeling',
+      'Resource Estimation',
+      'Mine Ventilation',
+      'Rock Mechanics',
+      'Sustainable Mining Practices'
+    ],
+    notes: 'Consulted on 50+ mining projects globally. Expert in complex underground operations. Developed new techniques for ore extraction that increased yields by 25%. Available for technical reviews.',
+    lastContact: '2024-01-08',
+    availability: 'Available',
+    yearsExperience: 32,
+    certifications: ['Professional Geologist', 'SME Registered Member'],
+    bio: 'Robert is known for solving the most challenging mining engineering problems, having worked on projects in over 15 countries across 6 continents.'
+  }
+];
+
+// Helper function to search experts
+export const searchExperts = (query) => {
+  if (!query || query.trim() === '') return [];
+  
+  const lowercaseQuery = query.toLowerCase();
+  const results = mockExperts.filter(expert => {
+    const searchableText = [
+      expert.name,
+      expert.location,
+      expert.industry,
+      expert.function,
+      ...expert.expertise,
+      expert.notes,
+      expert.bio
+    ].join(' ').toLowerCase();
+    
+    return searchableText.includes(lowercaseQuery);
+  });
+  
+  // Sort to show internal experts first
+  return results.sort((a, b) => {
+    if (a.type === 'Internal' && b.type === 'External') return -1;
+    if (a.type === 'External' && b.type === 'Internal') return 1;
+    return 0;
+  });
+};
+
+// Helper function to get expert by ID
+export const getExpertById = (id) => {
+  return mockExperts.find(expert => expert.id === id);
+};
+
+// Helper function to update expert
+export const updateExpert = (id, updatedData) => {
+  const index = mockExperts.findIndex(expert => expert.id === id);
+  if (index !== -1) {
+    mockExperts[index] = { ...mockExperts[index], ...updatedData };
+    return mockExperts[index];
+  }
+  return null;
+};
+</file>
+
+<file path="src/index.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans antialiased;
+  }
+}
+</file>
+
+<file path="src/main.jsx">
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>,
+)
+</file>
+
+<file path="tailwind.config.js">
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        'frank-blue': '#0F4C81',
+        'frank-light-blue': '#3B82F6',
+        'frank-gray': '#6B7280',
+        'frank-light-gray': '#F3F4F6',
+        'internal-green': '#10B981',
+        'external-blue': '#3B82F6',
+      }
+    },
+  },
+  plugins: [],
+}
+</file>
+
+<file path="vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})
+</file>
+
+</files>
