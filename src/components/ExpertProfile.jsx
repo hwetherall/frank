@@ -4,7 +4,7 @@ import {
   ArrowLeft, Edit2, Mail, Phone, MapPin, Building2, 
   Briefcase, Calendar, Award, FileText, Paperclip, 
   MessageSquare, Clock, CheckCircle, AlertCircle,
-  Download, Share2, Star, Globe, Users, BookOpen
+  Download, Share2, Star, Globe, Users, BookOpen, User
 } from 'lucide-react';
 import { getExpertByIdFromAll } from '../data/mockExperts';
 import StarRating from './StarRating';
@@ -190,6 +190,15 @@ const ExpertProfile = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
                 <div className="space-y-3">
+                  {expert.lead && (
+                    <div className="flex items-center space-x-3">
+                      <User className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Internal Lead</p>
+                        <p className="text-gray-900">{expert.lead}</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center space-x-3">
                     <Mail className="h-5 w-5 text-gray-400" />
                     <div>
@@ -256,6 +265,12 @@ const ExpertProfile = () => {
                     <span className="text-sm text-gray-600">Function</span>
                     <span className="font-semibold">{expert.function}</span>
                   </div>
+                  {expert.lead && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Lead</span>
+                      <span className="font-semibold">{expert.lead}</span>
+                    </div>
+                  )}
                   {expert.rating && (
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Rating</span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle, Brain, Sparkles } from 'lucide-react';
+import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle, Brain, Sparkles, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StarRating from './StarRating';
 
@@ -64,6 +64,12 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
                 <Building2 className="h-3 w-3" />
                 <span>{expert.industry}</span>
               </div>
+              {expert.lead && (
+                <div className="flex items-center space-x-1">
+                  <User className="h-3 w-3" />
+                  <span>Lead: {expert.lead}</span>
+                </div>
+              )}
               <div className="flex items-center space-x-1">
                 {getAvailabilityIcon()}
                 <span>{expert.availability}</span>
@@ -147,6 +153,12 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
             <MapPin className="h-4 w-4 text-gray-400" />
             <span className="text-sm">{expert.location}</span>
           </div>
+          {expert.lead && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <User className="h-4 w-4 text-gray-400" />
+              <span className="text-sm">Lead: {expert.lead}</span>
+            </div>
+          )}
           <div className="flex items-center space-x-2 text-gray-600">
             <Mail className="h-4 w-4 text-gray-400" />
             <a href={`mailto:${expert.email}`} className="text-sm hover:text-frank-blue transition-colors">

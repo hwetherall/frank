@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, Filter, ChevronDown, MapPin, Building2, 
-  Briefcase, Users, Globe, CheckCircle, AlertCircle, 
-  Clock, ExternalLink, Download, RefreshCw 
+  Briefcase, CheckCircle, AlertCircle, 
+  Clock, Download, RefreshCw, User 
 } from 'lucide-react';
 import { mockExperts } from '../data/mockExperts';
+import StarRating from './StarRating';
 
 const ViewDatabase = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +28,8 @@ const ViewDatabase = () => {
         expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expert.expertise.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
         expert.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expert.location.toLowerCase().includes(searchTerm.toLowerCase());
+        expert.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (expert.lead && expert.lead.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesLocation = locationFilter === 'all' || expert.location === locationFilter;
       const matchesIndustry = industryFilter === 'all' || expert.industry === industryFilter;
@@ -95,7 +97,7 @@ const ViewDatabase = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, expertise, location, or industry..."
+              placeholder="Search by name, expertise, location, industry, or lead..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent"
             />
           </div>
@@ -219,13 +221,13 @@ const ViewDatabase = () => {
                     Function
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                    Lead
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rating
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
                   </th>
                 </tr>
               </thead>
@@ -240,7 +242,12 @@ const ViewDatabase = () => {
                           alt={expert.name}
                         />
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{expert.name}</div>
+                          <Link
+                            to={`/expert/${expert.id}`}
+                            className="text-sm font-medium text-frank-blue hover:text-frank-blue/80 transition-colors"
+                          >
+                            {expert.name}
+                          </Link>
                           <div className="text-sm text-gray-500">{expert.email}</div>
                         </div>
                       </div>
@@ -264,33 +271,33 @@ const ViewDatabase = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        expert.type === 'Internal' 
-                          ? 'bg-internal-green text-white' 
-                          : 'bg-external-blue text-white'
-                      }`}>
-                        {expert.type === 'Internal' ? (
-                          <Users className="h-3 w-3 mr-1" />
-                        ) : (
-                          <Globe className="h-3 w-3 mr-1" />
-                        )}
-                        {expert.type}
-                      </span>
+                      {expert.lead ? (
+                        <div className="flex items-center text-sm text-gray-900">
+                          <User className="h-3 w-3 mr-1 text-gray-400" />
+                          {expert.lead}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {expert.rating ? (
+                        <StarRating 
+                          rating={expert.rating} 
+                          reviewCount={expert.reviewCount}
+                          size="sm"
+                          interactive={false}
+                          showReviewCount={false}
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-400">No rating</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm">
                         {getAvailabilityIcon(expert.availability)}
                         <span className="ml-1 text-gray-900">{expert.availability}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link
-                        to={`/expert/${expert.id}`}
-                        className="text-frank-blue hover:text-frank-blue/80 flex items-center space-x-1"
-                      >
-                        <span>View Profile</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
                     </td>
                   </tr>
                 ))}

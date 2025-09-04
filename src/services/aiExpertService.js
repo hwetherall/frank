@@ -23,6 +23,12 @@ const determineExpertType = (location, query) => {
   return Math.random() > 0.7 && isInternalLocation ? 'Internal' : 'External';
 };
 
+// Helper function to randomly assign a lead from the available names
+const getRandomLead = () => {
+  const leads = ['Daniel', 'Bobby', 'Kamran', 'Pedram', 'Harry'];
+  return leads[Math.floor(Math.random() * leads.length)];
+};
+
 // Main function to generate experts using AI
 export const generateExpertsForQuery = async (searchQuery) => {
   try {
@@ -41,6 +47,8 @@ For each expert, provide ONLY a valid JSON object with these exact fields:
 - yearsExperience: Number between 8-35
 - certifications: Array of 1-3 relevant professional certifications
 - availability: One of: Available, Busy, Unknown
+
+Note: Do not include a 'lead' field - this will be automatically assigned.
 
 Respond with ONLY a JSON array of 2-3 expert objects. No additional text, explanations, or markdown formatting.
 
@@ -104,6 +112,7 @@ Example format:
       industry: expert.industry,
       function: expert.function,
       type: determineExpertType(expert.location, searchQuery),
+      lead: getRandomLead(),
       email: expert.email,
       phone: expert.phone,
       expertise: expert.expertise || [],
@@ -136,6 +145,7 @@ const generateFallbackExperts = (searchQuery) => {
       industry: getIndustryFromQuery(searchQuery),
       function: 'Research',
       type: 'External',
+      lead: getRandomLead(),
       email: 'a.martinez@techresearch.es',
       phone: '+34 93 555 0123',
       expertise: getExpertiseFromQuery(searchQuery),
@@ -155,6 +165,7 @@ const generateFallbackExperts = (searchQuery) => {
       industry: getIndustryFromQuery(searchQuery),
       function: 'Engineering',
       type: 'External',
+      lead: getRandomLead(),
       email: 'mchen@innovativetech.ca',
       phone: '+1 (604) 555-0156',
       expertise: getExpertiseFromQuery(searchQuery),

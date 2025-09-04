@@ -8,6 +8,7 @@ export const mockExperts = [
     industry: 'Nuclear',
     function: 'Engineering',
     type: 'Internal',
+    lead: 'Daniel',
     email: 'sarah.chen@innovera.com',
     phone: '+1 (312) 555-0101',
     expertise: [
@@ -34,6 +35,7 @@ export const mockExperts = [
     industry: 'Venture Capital',
     function: 'Finance',
     type: 'Internal',
+    lead: 'Bobby',
     email: 'marcus.rodriguez@innovera.com',
     phone: '+1 (212) 555-0102',
     expertise: [
@@ -61,6 +63,7 @@ export const mockExperts = [
     industry: 'Robotics',
     function: 'Research',
     type: 'Internal',
+    lead: 'Kamran',
     email: 'raj.patel@innovera.com',
     phone: '+65 8555-0103',
     expertise: [
@@ -88,6 +91,7 @@ export const mockExperts = [
     industry: 'AI/ML',
     function: 'Research',
     type: 'Internal',
+    lead: 'Pedram',
     email: 'lisa.zhang@innovera.com',
     phone: '+1 (415) 555-0104',
     expertise: [
@@ -115,6 +119,7 @@ export const mockExperts = [
     industry: 'Mining',
     function: 'Operations',
     type: 'Internal',
+    lead: 'Harry',
     email: 'mike.thompson@innovera.com',
     phone: '+61 8 5555 0105',
     expertise: [
@@ -144,6 +149,7 @@ export const mockExperts = [
     industry: 'Nuclear',
     function: 'Strategy',
     type: 'External',
+    lead: 'Daniel',
     email: 'j.wilson@oxfordnuclear.ac.uk',
     phone: '+44 20 5555 0201',
     expertise: [
@@ -171,6 +177,7 @@ export const mockExperts = [
     industry: 'Venture Capital',
     function: 'Finance',
     type: 'External',
+    lead: 'Bobby',
     email: 'angela@fosteri.com',
     phone: '+1 (650) 555-0202',
     expertise: [
@@ -198,6 +205,7 @@ export const mockExperts = [
     industry: 'Robotics',
     function: 'Engineering',
     type: 'External',
+    lead: 'Kamran',
     email: 'tanaka@tokyorobotics.jp',
     phone: '+81 3 5555 0203',
     expertise: [
@@ -225,6 +233,7 @@ export const mockExperts = [
     industry: 'AI/ML',
     function: 'Research',
     type: 'External',
+    lead: 'Pedram',
     email: 'akumar@vectorinstitute.ca',
     phone: '+1 (416) 555-0204',
     expertise: [
@@ -252,6 +261,7 @@ export const mockExperts = [
     industry: 'Mining',
     function: 'Engineering',
     type: 'External',
+    lead: 'Harry',
     email: 'rclarke@miningconsult.ca',
     phone: '+1 (604) 555-0205',
     expertise: [
@@ -284,6 +294,7 @@ export const searchExperts = (query) => {
       expert.location,
       expert.industry,
       expert.function,
+      expert.lead,
       ...expert.expertise,
       expert.notes,
       expert.bio
@@ -349,6 +360,7 @@ export const searchAllExperts = (query) => {
       expert.location,
       expert.industry,
       expert.function,
+      expert.lead,
       ...expert.expertise,
       expert.notes,
       expert.bio
