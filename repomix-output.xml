@@ -40,7 +40,10 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
+.env.example
 .gitignore
+.vercel/project.json
+.vercel/README.txt
 index.html
 package.json
 postcss.config.js
@@ -49,11 +52,13 @@ src/components/ExpertCard.jsx
 src/components/ExpertProfile.jsx
 src/components/FindExpert.jsx
 src/components/Navigation.jsx
+src/components/StarRating.jsx
 src/components/UpdateExpert.jsx
 src/components/ViewDatabase.jsx
 src/data/mockExperts.js
 src/index.css
 src/main.jsx
+src/services/aiExpertService.js
 tailwind.config.js
 vite.config.js
 </directory_structure>
@@ -61,31 +66,28 @@ vite.config.js
 <files>
 This section contains the contents of the repository's files.
 
-<file path=".gitignore">
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+<file path=".env.example">
+# Groq API Configuration
+# Get your API key from: https://console.groq.com/keys
+VITE_GROQ_API_KEY=your_groq_api_key_here
+</file>
 
-node_modules
-dist
-dist-ssr
-*.local
+<file path=".vercel/project.json">
+{"projectId":"prj_O03o654VVCfOfE0UJrcLs8vszNiv","orgId":"team_d3LPtw5znbUnyhZXaTxug7oL","projectName":"frank"}
+</file>
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+<file path=".vercel/README.txt">
+> Why do I have a folder named ".vercel" in my project?
+The ".vercel" folder is created when you link a directory to a Vercel project.
+
+> What does the "project.json" file contain?
+The "project.json" file contains:
+- The ID of the Vercel project that you linked ("projectId")
+- The ID of the user or team your Vercel project is owned by ("orgId")
+
+> Should I commit the ".vercel" folder?
+No, you should not share the ".vercel" folder with anyone.
+Upon creation, it will be automatically added to your ".gitignore" file.
 </file>
 
 <file path="index.html">
@@ -102,35 +104,6 @@ dist-ssr
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-</file>
-
-<file path="package.json">
-{
-  "name": "frank-expert-discovery",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.18.0",
-    "lucide-react": "^0.294.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.0",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.3.6",
-    "vite": "^5.0.8"
-  }
-}
 </file>
 
 <file path="postcss.config.js">
@@ -166,792 +139,6 @@ function App() {
 }
 
 export default App;
-</file>
-
-<file path="src/components/ExpertCard.jsx">
-import React from 'react';
-import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-const ExpertCard = ({ expert, variant = 'default' }) => {
-  const getAvailabilityIcon = () => {
-    switch (expert.availability) {
-      case 'Available':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'Busy':
-        return <AlertCircle className="h-4 w-4 text-orange-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
-    }
-  };
-
-  const getTypeColor = () => {
-    return expert.type === 'Internal' 
-      ? 'bg-internal-green text-white' 
-      : 'bg-external-blue text-white';
-  };
-
-  if (variant === 'compact') {
-    // Compact version for search results
-    return (
-      <Link 
-        to={`/expert/${expert.id}`}
-        className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-4 border border-gray-100"
-      >
-        <div className="flex items-start space-x-4">
-          <img
-            src={expert.photo}
-            alt={expert.name}
-            className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-200"
-          />
-          <div className="flex-1">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 hover:text-frank-blue transition-colors">
-                  {expert.name}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">{expert.expertise[0]}</p>
-              </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor()}`}>
-                {expert.type}
-              </span>
-            </div>
-            
-            <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-500">
-              <div className="flex items-center space-x-1">
-                <MapPin className="h-3 w-3" />
-                <span>{expert.location}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Building2 className="h-3 w-3" />
-                <span>{expert.industry}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                {getAvailabilityIcon()}
-                <span>{expert.availability}</span>
-              </div>
-            </div>
-            
-            {expert.expertise.length > 1 && (
-              <div className="flex flex-wrap gap-1 mt-3">
-                {expert.expertise.slice(0, 3).map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-frank-light-gray text-xs text-gray-700 rounded-full"
-                  >
-                    {skill}
-                  </span>
-                ))}
-                {expert.expertise.length > 3 && (
-                  <span className="px-2 py-1 text-xs text-gray-500">
-                    +{expert.expertise.length - 3} more
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  // Default full card version
-  return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
-      <div className="relative">
-        <div className="h-32 bg-gradient-to-r from-frank-blue to-frank-light-blue"></div>
-        <div className="absolute -bottom-12 left-6">
-          <img
-            src={expert.photo}
-            alt={expert.name}
-            className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
-          />
-        </div>
-        <div className="absolute top-4 right-4">
-          <span className={`px-3 py-1 text-sm font-medium rounded-full ${getTypeColor()}`}>
-            {expert.type}
-          </span>
-        </div>
-      </div>
-
-      <div className="pt-14 px-6 pb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{expert.name}</h2>
-            <p className="text-gray-600 mt-1">{expert.industry} • {expert.function}</p>
-          </div>
-          <div className="flex items-center space-x-1">
-            {getAvailabilityIcon()}
-            <span className="text-sm text-gray-600">{expert.availability}</span>
-          </div>
-        </div>
-
-        <div className="space-y-3 mb-4">
-          <div className="flex items-center space-x-2 text-gray-600">
-            <MapPin className="h-4 w-4 text-gray-400" />
-            <span className="text-sm">{expert.location}</span>
-          </div>
-          <div className="flex items-center space-x-2 text-gray-600">
-            <Mail className="h-4 w-4 text-gray-400" />
-            <a href={`mailto:${expert.email}`} className="text-sm hover:text-frank-blue transition-colors">
-              {expert.email}
-            </a>
-          </div>
-          <div className="flex items-center space-x-2 text-gray-600">
-            <Phone className="h-4 w-4 text-gray-400" />
-            <span className="text-sm">{expert.phone}</span>
-          </div>
-        </div>
-
-        {expert.bio && (
-          <p className="text-gray-700 text-sm leading-relaxed mb-4">
-            {expert.bio}
-          </p>
-        )}
-
-        <div className="mb-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Expertise Areas</h3>
-          <div className="flex flex-wrap gap-2">
-            {expert.expertise.map((skill, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-frank-light-gray text-sm text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {expert.yearsExperience && (
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-            <div className="text-sm text-gray-600">
-              <span className="font-semibold">{expert.yearsExperience}</span> years experience
-            </div>
-            {expert.lastContact && (
-              <div className="text-sm text-gray-500">
-                Last contact: {new Date(expert.lastContact).toLocaleDateString()}
-              </div>
-            )}
-          </div>
-        )}
-
-        <Link
-          to={`/expert/${expert.id}`}
-          className="mt-4 w-full bg-frank-blue text-white py-2 px-4 rounded-lg hover:bg-frank-blue/90 transition-colors text-center font-medium inline-block"
-        >
-          View Full Profile
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-export default ExpertCard;
-</file>
-
-<file path="src/components/ExpertProfile.jsx">
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Edit2, Mail, Phone, MapPin, Building2, 
-  Briefcase, Calendar, Award, FileText, Paperclip, 
-  MessageSquare, Clock, CheckCircle, AlertCircle,
-  Download, Share2, Star, Globe, Users, BookOpen
-} from 'lucide-react';
-import { getExpertById } from '../data/mockExperts';
-
-const ExpertProfile = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const expert = getExpertById(id);
-  const [activeTab, setActiveTab] = useState('overview');
-
-  if (!expert) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Expert not found</h2>
-          <p className="text-gray-600 mb-4">The expert you're looking for doesn't exist.</p>
-          <Link to="/database" className="text-frank-blue hover:underline">
-            Return to Database
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const getAvailabilityStatus = () => {
-    switch (expert.availability) {
-      case 'Available':
-        return { icon: <CheckCircle className="h-5 w-5" />, color: 'text-green-500', bg: 'bg-green-50' };
-      case 'Busy':
-        return { icon: <AlertCircle className="h-5 w-5" />, color: 'text-orange-500', bg: 'bg-orange-50' };
-      default:
-        return { icon: <Clock className="h-5 w-5" />, color: 'text-gray-500', bg: 'bg-gray-50' };
-    }
-  };
-
-  const availabilityStatus = getAvailabilityStatus();
-
-  // Mock files/documents
-  const documents = [
-    { id: 1, name: 'CV_Resume.pdf', size: '2.4 MB', uploadedDate: '2024-01-15' },
-    { id: 2, name: 'Certifications.pdf', size: '1.8 MB', uploadedDate: '2024-01-10' },
-    { id: 3, name: 'Publications_List.docx', size: '856 KB', uploadedDate: '2024-01-05' }
-  ];
-
-  // Mock recent activities
-  const recentActivities = [
-    { id: 1, action: 'Completed project review', date: '2 days ago', type: 'project' },
-    { id: 2, action: 'Updated expertise areas', date: '1 week ago', type: 'update' },
-    { id: 3, action: 'Added new certification', date: '2 weeks ago', type: 'certification' }
-  ];
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with back button */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/database')}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back to Database</span>
-            </button>
-            <div className="flex space-x-3">
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                <Share2 className="h-5 w-5" />
-              </button>
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                <Download className="h-5 w-5" />
-              </button>
-              <Link
-                to={`/update/${expert.id}`}
-                className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2"
-              >
-                <Edit2 className="h-4 w-4" />
-                <span>Edit Expert</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Profile Header */}
-      <div className="bg-gradient-to-r from-frank-blue to-frank-light-blue">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
-            <img
-              src={expert.photo}
-              alt={expert.name}
-              className="w-32 h-32 rounded-full border-4 border-white shadow-xl"
-            />
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
-                <h1 className="text-3xl font-bold text-white">{expert.name}</h1>
-                <div className="flex items-center justify-center md:justify-start space-x-2 mt-2 md:mt-0">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    expert.type === 'Internal' 
-                      ? 'bg-internal-green text-white' 
-                      : 'bg-external-blue text-white'
-                  }`}>
-                    {expert.type === 'Internal' ? <Users className="h-3 w-3 inline mr-1" /> : <Globe className="h-3 w-3 inline mr-1" />}
-                    {expert.type} Expert
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${availabilityStatus.bg} ${availabilityStatus.color} flex items-center space-x-1`}>
-                    {availabilityStatus.icon}
-                    <span>{expert.availability}</span>
-                  </span>
-                </div>
-              </div>
-              
-              <p className="text-blue-100 mt-2">{expert.industry} • {expert.function}</p>
-              
-              <div className="flex flex-wrap gap-4 mt-4 text-white justify-center md:justify-start">
-                <div className="flex items-center space-x-1">
-                  <MapPin className="h-4 w-4" />
-                  <span>{expert.location}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Award className="h-4 w-4" />
-                  <span>{expert.yearsExperience} years experience</span>
-                </div>
-                {expert.certifications && (
-                  <div className="flex items-center space-x-1">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{expert.certifications.length} certifications</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {['overview', 'expertise', 'notes', 'documents', 'activity'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors ${
-                  activeTab === tab
-                    ? 'border-frank-blue text-frank-blue'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Bio */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Biography</h2>
-                <p className="text-gray-700 leading-relaxed">{expert.bio}</p>
-              </div>
-
-              {/* Contact Information */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <a href={`mailto:${expert.email}`} className="text-frank-blue hover:underline">
-                        {expert.email}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Phone className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Phone</p>
-                      <p className="text-gray-900">{expert.phone}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-600">Location</p>
-                      <p className="text-gray-900">{expert.location}</p>
-                    </div>
-                  </div>
-                  {expert.lastContact && (
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-600">Last Contact</p>
-                        <p className="text-gray-900">{new Date(expert.lastContact).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-8">
-              {/* Quick Stats */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Experience</span>
-                    <span className="font-semibold">{expert.yearsExperience} years</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Expertise Areas</span>
-                    <span className="font-semibold">{expert.expertise.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Type</span>
-                    <span className="font-semibold">{expert.type}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Industry</span>
-                    <span className="font-semibold">{expert.industry}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Function</span>
-                    <span className="font-semibold">{expert.function}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Certifications */}
-              {expert.certifications && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Certifications</h3>
-                  <div className="space-y-2">
-                    {expert.certifications.map((cert, index) => (
-                      <div key={index} className="flex items-start space-x-2">
-                        <Award className="h-4 w-4 text-frank-blue mt-0.5" />
-                        <span className="text-sm text-gray-700">{cert}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'expertise' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Areas of Expertise</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {expert.expertise.map((skill, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  <span className="text-gray-700">{skill}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'notes' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
-              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
-                <MessageSquare className="h-4 w-4" />
-                <span>Add Note</span>
-              </button>
-            </div>
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-              <div className="flex items-start space-x-3">
-                <FileText className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="text-gray-700">{expert.notes}</p>
-                  <p className="text-sm text-gray-500 mt-2">Last updated: {new Date(expert.lastContact).toLocaleDateString()}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'documents' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Files & Documents</h2>
-              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
-                <Paperclip className="h-4 w-4" />
-                <span>Upload File</span>
-              </button>
-            </div>
-            <div className="space-y-3">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-900">{doc.name}</p>
-                      <p className="text-sm text-gray-500">{doc.size} • Uploaded {doc.uploadedDate}</p>
-                    </div>
-                  </div>
-                  <button className="p-2 text-frank-blue hover:bg-blue-50 rounded-lg transition-colors">
-                    <Download className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'activity' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activity</h2>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3 pb-4 border-b border-gray-100 last:border-0">
-                  <div className={`p-2 rounded-full ${
-                    activity.type === 'project' ? 'bg-blue-100' :
-                    activity.type === 'update' ? 'bg-green-100' :
-                    'bg-purple-100'
-                  }`}>
-                    {activity.type === 'project' ? <Briefcase className="h-4 w-4 text-blue-600" /> :
-                     activity.type === 'update' ? <Edit2 className="h-4 w-4 text-green-600" /> :
-                     <Award className="h-4 w-4 text-purple-600" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-500 mt-1">{activity.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default ExpertProfile;
-</file>
-
-<file path="src/components/FindExpert.jsx">
-import React, { useState } from 'react';
-import { Search, Sparkles, Users, Globe, TrendingUp, Award, Filter } from 'lucide-react';
-import { searchExperts } from '../data/mockExperts';
-import ExpertCard from './ExpertCard';
-
-const FindExpert = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-
-  const popularSearches = [
-    'Nuclear safety',
-    'Venture capital funding',
-    'AI and machine learning',
-    'Robotics automation',
-    'Mining operations'
-  ];
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    setIsSearching(true);
-    setHasSearched(true);
-
-    // Simulate AI processing delay
-    setTimeout(() => {
-      const results = searchExperts(searchQuery);
-      setSearchResults(results);
-      setIsSearching(false);
-    }, 800);
-  };
-
-  const handleQuickSearch = (term) => {
-    setSearchQuery(term);
-    setIsSearching(true);
-    setHasSearched(true);
-
-    setTimeout(() => {
-      const results = searchExperts(term);
-      setSearchResults(results);
-      setIsSearching(false);
-    }, 800);
-  };
-
-  const internalExperts = searchResults.filter(e => e.type === 'Internal');
-  const externalExperts = searchResults.filter(e => e.type === 'External');
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-frank-blue to-frank-light-blue text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-white/20 p-3 rounded-full">
-                <Sparkles className="h-8 w-8 text-white" />
-              </div>
-            </div>
-            <h1 className="text-4xl font-bold mb-4">Find Your Perfect Expert</h1>
-            <p className="text-xl text-blue-100 mb-8">
-              Connect with internal experts or discover external specialists for your project
-            </p>
-          </div>
-
-          {/* Search Box */}
-          <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Describe your project or expertise needed..."
-                className="w-full px-6 py-4 pr-32 text-gray-900 bg-white rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 text-lg"
-              />
-              <button
-                type="submit"
-                disabled={isSearching}
-                className="absolute right-2 top-2 bg-frank-blue text-white px-6 py-2 rounded-lg hover:bg-frank-blue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {isSearching ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Searching...</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-5 w-5" />
-                    <span>Search</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Quick Search Tags */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <span className="text-sm text-blue-100">Popular searches:</span>
-            {popularSearches.map((term, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickSearch(term)}
-                className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-sm text-white transition-colors"
-              >
-                {term}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      {!hasSearched && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Users className="h-8 w-8 text-internal-green mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">Internal Experts</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Globe className="h-8 w-8 text-external-blue mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">External Experts</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">Industries Covered</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Award className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">20+</div>
-              <div className="text-sm text-gray-600">Years Avg. Experience</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Search Results */}
-      {hasSearched && !isSearching && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {searchResults.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center">
-              <div className="max-w-md mx-auto">
-                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No experts found</h3>
-                <p className="text-gray-600 mb-6">
-                  Try adjusting your search terms or browse our database for available experts.
-                </p>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchResults([]);
-                    setHasSearched(false);
-                  }}
-                  className="px-6 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
-                >
-                  Clear Search
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Found {searchResults.length} expert{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
-                </h2>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchResults([]);
-                    setHasSearched(false);
-                  }}
-                  className="text-sm text-gray-600 hover:text-gray-900 underline"
-                >
-                  Clear search
-                </button>
-              </div>
-
-              {/* Internal Experts Section */}
-              {internalExperts.length > 0 && (
-                <div className="mb-8">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="bg-internal-green/10 p-2 rounded-lg">
-                      <Users className="h-5 w-5 text-internal-green" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900">Internal Experts</h3>
-                    <span className="px-2 py-1 bg-internal-green/10 text-internal-green text-sm rounded-full">
-                      Existing Relationships
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {internalExperts.map((expert) => (
-                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* External Experts Section */}
-              {externalExperts.length > 0 && (
-                <div>
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="bg-external-blue/10 p-2 rounded-lg">
-                      <Globe className="h-5 w-5 text-external-blue" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900">External Experts</h3>
-                    <span className="px-2 py-1 bg-external-blue/10 text-external-blue text-sm rounded-full">
-                      New Connections
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {externalExperts.map((expert) => (
-                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Loading State */}
-      {isSearching && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white rounded-lg shadow-md p-12">
-            <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-frank-blue mb-4"></div>
-              <p className="text-gray-600">AI is analyzing your request and finding the best experts...</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default FindExpert;
 </file>
 
 <file path="src/components/Navigation.jsx">
@@ -1062,6 +249,124 @@ const Navigation = () => {
 };
 
 export default Navigation;
+</file>
+
+<file path="src/components/StarRating.jsx">
+import React, { useState } from 'react';
+import { Star } from 'lucide-react';
+
+const StarRating = ({ 
+  rating = 0, 
+  reviewCount = 0, 
+  size = 'md', 
+  interactive = false, 
+  onRatingChange = null,
+  showReviewCount = true 
+}) => {
+  const [hoverRating, setHoverRating] = useState(0);
+  const [currentRating, setCurrentRating] = useState(rating);
+
+  const sizes = {
+    sm: { star: 'h-3 w-3', text: 'text-xs', gap: 'space-x-0.5' },
+    md: { star: 'h-4 w-4', text: 'text-sm', gap: 'space-x-1' },
+    lg: { star: 'h-5 w-5', text: 'text-base', gap: 'space-x-1' },
+    xl: { star: 'h-6 w-6', text: 'text-lg', gap: 'space-x-1' }
+  };
+
+  const sizeClasses = sizes[size] || sizes.md;
+
+  const handleStarClick = (starValue) => {
+    if (interactive) {
+      setCurrentRating(starValue);
+      if (onRatingChange) {
+        onRatingChange(starValue);
+      }
+    }
+  };
+
+  const handleStarHover = (starValue) => {
+    if (interactive) {
+      setHoverRating(starValue);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (interactive) {
+      setHoverRating(0);
+    }
+  };
+
+  const displayRating = interactive ? currentRating : rating;
+  const activeRating = hoverRating || displayRating;
+
+  const renderStars = () => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      const isFilled = i <= Math.floor(activeRating);
+      const isHalfFilled = i === Math.ceil(activeRating) && activeRating % 1 !== 0;
+      
+      stars.push(
+        <div
+          key={i}
+          className={`relative ${interactive ? 'cursor-pointer' : ''}`}
+          onClick={() => handleStarClick(i)}
+          onMouseEnter={() => handleStarHover(i)}
+        >
+          {/* Background star (empty) */}
+          <Star 
+            className={`${sizeClasses.star} text-gray-300 transition-colors duration-150`}
+          />
+          
+          {/* Filled star overlay */}
+          <div 
+            className="absolute inset-0 overflow-hidden"
+            style={{
+              width: isFilled ? '100%' : isHalfFilled ? '50%' : '0%'
+            }}
+          >
+            <Star 
+              className={`${sizeClasses.star} transition-colors duration-150 ${
+                interactive && hoverRating >= i 
+                  ? 'text-yellow-400' 
+                  : 'text-yellow-500'
+              }`}
+              fill="currentColor"
+            />
+          </div>
+        </div>
+      );
+    }
+    return stars;
+  };
+
+  return (
+    <div 
+      className={`flex items-center ${sizeClasses.gap}`}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={`flex items-center ${sizeClasses.gap}`}>
+        {renderStars()}
+      </div>
+      
+      {(displayRating > 0 || reviewCount > 0) && (
+        <div className={`flex items-center space-x-1 ml-2 ${sizeClasses.text} text-gray-600`}>
+          {displayRating > 0 && (
+            <span className="font-medium">
+              {displayRating.toFixed(1)}
+            </span>
+          )}
+          {showReviewCount && reviewCount > 0 && (
+            <span className="text-gray-500">
+              ({reviewCount} review{reviewCount !== 1 ? 's' : ''})
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StarRating;
 </file>
 
 <file path="src/components/UpdateExpert.jsx">
@@ -1570,15 +875,512 @@ const UpdateExpert = () => {
 export default UpdateExpert;
 </file>
 
+<file path="src/index.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans antialiased;
+  }
+}
+</file>
+
+<file path="src/main.jsx">
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>,
+)
+</file>
+
+<file path="tailwind.config.js">
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        'frank-blue': '#0F4C81',
+        'frank-light-blue': '#3B82F6',
+        'frank-gray': '#6B7280',
+        'frank-light-gray': '#F3F4F6',
+        'internal-green': '#10B981',
+        'external-blue': '#3B82F6',
+      }
+    },
+  },
+  plugins: [],
+}
+</file>
+
+<file path="vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="package.json">
+{
+  "name": "frank-expert-discovery",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "groq-sdk": "^0.31.0",
+    "lucide-react": "^0.294.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.18.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "vite": "^5.0.8"
+  }
+}
+</file>
+
+<file path="src/components/FindExpert.jsx">
+import React, { useState } from 'react';
+import { Search, Sparkles, Users, Globe, TrendingUp, Award, Filter, Linkedin, Twitter, FileText, Building2, UserCheck } from 'lucide-react';
+import { searchExperts, addAIGeneratedExperts, searchAllExperts } from '../data/mockExperts';
+import { generateExpertsForQuery } from '../services/aiExpertService';
+import ExpertCard from './ExpertCard';
+
+const FindExpert = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFindingExperts, setIsFindingExperts] = useState(false);
+  const [searchingSources, setSearchingSources] = useState([]);
+
+  const popularSearches = [
+    'Nuclear safety',
+    'Venture capital funding',
+    'AI and machine learning',
+    'Robotics automation',
+    'Mining operations'
+  ];
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setHasSearched(true);
+
+    // Simulate AI processing delay
+    setTimeout(() => {
+      const results = searchAllExperts(searchQuery);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 800);
+  };
+
+  const handleQuickSearch = (term) => {
+    setSearchQuery(term);
+    setIsSearching(true);
+    setHasSearched(true);
+
+    setTimeout(() => {
+      const results = searchAllExperts(term);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 800);
+  };
+
+  // Sources to simulate searching through
+  const searchSources = [
+    { name: 'LinkedIn', icon: Linkedin, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { name: 'Industry Networks', icon: Building2, color: 'text-gray-600', bgColor: 'bg-gray-50' },
+    { name: 'Research Papers', icon: FileText, color: 'text-green-600', bgColor: 'bg-green-50' },
+    { name: 'Professional Databases', icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+    { name: 'Expert Directories', icon: UserCheck, color: 'text-orange-600', bgColor: 'bg-orange-50' }
+  ];
+
+  const handleFindExpert = async () => {
+    setIsFindingExperts(true);
+    setSearchingSources([]);
+
+    // Simulate searching through different sources with delays
+    const searchSequence = async () => {
+      for (let i = 0; i < searchSources.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setSearchingSources(prev => [...prev, i]);
+      }
+
+      // Final delay before showing results
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      try {
+        // Generate experts using AI service
+        const aiExperts = await generateExpertsForQuery(searchQuery);
+        
+        // Add to global store
+        addAIGeneratedExperts(aiExperts);
+        
+        // Update search results
+        const allResults = searchAllExperts(searchQuery);
+        setSearchResults(allResults);
+        
+      } catch (error) {
+        console.error('Error finding experts:', error);
+        // Fallback to just showing a message or empty results
+        setSearchResults([]);
+      }
+
+      setIsFindingExperts(false);
+      setSearchingSources([]);
+    };
+
+    await searchSequence();
+  };
+
+  const internalExperts = searchResults.filter(e => e.type === 'Internal');
+  const externalExperts = searchResults.filter(e => e.type === 'External');
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-frank-blue to-frank-light-blue text-white py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-white/20 p-3 rounded-full">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold mb-4">Find Your Perfect Expert</h1>
+            <p className="text-xl text-blue-100 mb-8">
+              Connect with internal experts or discover external specialists for your project
+            </p>
+          </div>
+
+          {/* Search Box */}
+          <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Describe your project or expertise needed..."
+                className="w-full px-6 py-4 pr-32 text-gray-900 bg-white rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 text-lg"
+              />
+              <button
+                type="submit"
+                disabled={isSearching}
+                className="absolute right-2 top-2 bg-frank-blue text-white px-6 py-2 rounded-lg hover:bg-frank-blue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {isSearching ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Searching...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-5 w-5" />
+                    <span>Search</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Quick Search Tags */}
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <span className="text-sm text-blue-100">Popular searches:</span>
+            {popularSearches.map((term, index) => (
+              <button
+                key={index}
+                onClick={() => handleQuickSearch(term)}
+                className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-sm text-white transition-colors"
+              >
+                {term}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      {!hasSearched && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <Users className="h-8 w-8 text-internal-green mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">5</div>
+              <div className="text-sm text-gray-600">Internal Experts</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <Globe className="h-8 w-8 text-external-blue mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">5</div>
+              <div className="text-sm text-gray-600">External Experts</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">5</div>
+              <div className="text-sm text-gray-600">Industries Covered</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <Award className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">20+</div>
+              <div className="text-sm text-gray-600">Years Avg. Experience</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Results */}
+      {hasSearched && !isSearching && !isFindingExperts && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {searchResults.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No experts found in our database</h3>
+                <p className="text-gray-600 mb-6">
+                  Don't worry! Frank can search external networks to find the perfect experts for your project.
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={handleFindExpert}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-frank-blue to-frank-light-blue text-white rounded-lg hover:from-frank-blue/90 hover:to-frank-light-blue/90 transition-all transform hover:scale-105 flex items-center justify-center space-x-2 font-semibold"
+                  >
+                    <Sparkles className="h-5 w-5" />
+                    <span>Find Expert</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setHasSearched(false);
+                    }}
+                    className="w-full px-6 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Clear Search
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Found {searchResults.length} expert{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                </h2>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setHasSearched(false);
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-900 underline"
+                >
+                  Clear search
+                </button>
+              </div>
+
+              {/* Internal Experts Section */}
+              {internalExperts.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="bg-internal-green/10 p-2 rounded-lg">
+                      <Users className="h-5 w-5 text-internal-green" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Internal Experts</h3>
+                    <span className="px-2 py-1 bg-internal-green/10 text-internal-green text-sm rounded-full">
+                      Existing Relationships
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {internalExperts.map((expert) => (
+                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* External Experts Section */}
+              {externalExperts.length > 0 && (
+                <div>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="bg-external-blue/10 p-2 rounded-lg">
+                      <Globe className="h-5 w-5 text-external-blue" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">External Experts</h3>
+                    <span className="px-2 py-1 bg-external-blue/10 text-external-blue text-sm rounded-full">
+                      New Connections
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {externalExperts.map((expert) => (
+                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Find Expert Animation */}
+      {isFindingExperts && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white rounded-lg shadow-md p-12">
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-frank-blue/20 border-t-frank-blue"></div>
+                  <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-frank-blue animate-pulse" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Frank is finding experts for you...</h3>
+              <p className="text-gray-600">Searching through professional networks and databases</p>
+            </div>
+
+            {/* Sources Animation */}
+            <div className="space-y-4 max-w-md mx-auto">
+              {searchSources.map((source, index) => {
+                const Icon = source.icon;
+                const isSearching = searchingSources.includes(index);
+                const isCompleted = searchingSources.includes(index);
+                
+                return (
+                  <div
+                    key={source.name}
+                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-500 ${
+                      isSearching ? `${source.bgColor} border-2 border-dashed ${source.color.replace('text-', 'border-')}` : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-full ${isSearching ? 'bg-white' : 'bg-gray-200'} transition-all duration-300`}>
+                      <Icon className={`h-4 w-4 ${isSearching ? source.color : 'text-gray-400'} ${isSearching ? 'animate-pulse' : ''}`} />
+                    </div>
+                    <div className="flex-1">
+                      <div className={`font-medium ${isSearching ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {source.name}
+                      </div>
+                      {isSearching && (
+                        <div className="text-sm text-gray-600 animate-pulse">
+                          Searching...
+                        </div>
+                      )}
+                    </div>
+                    {isCompleted && (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-green-600 font-medium">Found</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Progress indicator */}
+            <div className="mt-8">
+              <div className="bg-gray-200 rounded-full h-2 max-w-md mx-auto">
+                <div 
+                  className="bg-gradient-to-r from-frank-blue to-frank-light-blue h-2 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${(searchingSources.length / searchSources.length) * 100}%` }}
+                ></div>
+              </div>
+              <p className="text-center text-sm text-gray-500 mt-2">
+                {searchingSources.length} of {searchSources.length} sources searched
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isSearching && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white rounded-lg shadow-md p-12">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-frank-blue mb-4"></div>
+              <p className="text-gray-600">AI is analyzing your request and finding the best experts...</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FindExpert;
+</file>
+
 <file path="src/components/ViewDatabase.jsx">
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, Filter, ChevronDown, MapPin, Building2, 
-  Briefcase, Users, Globe, CheckCircle, AlertCircle, 
-  Clock, ExternalLink, Download, RefreshCw 
+  Briefcase, CheckCircle, AlertCircle, 
+  Clock, Download, RefreshCw, User 
 } from 'lucide-react';
 import { mockExperts } from '../data/mockExperts';
+import StarRating from './StarRating';
 
 const ViewDatabase = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -1600,7 +1402,8 @@ const ViewDatabase = () => {
         expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expert.expertise.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
         expert.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expert.location.toLowerCase().includes(searchTerm.toLowerCase());
+        expert.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (expert.lead && expert.lead.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesLocation = locationFilter === 'all' || expert.location === locationFilter;
       const matchesIndustry = industryFilter === 'all' || expert.industry === industryFilter;
@@ -1668,7 +1471,7 @@ const ViewDatabase = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, expertise, location, or industry..."
+              placeholder="Search by name, expertise, location, industry, or lead..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent"
             />
           </div>
@@ -1792,13 +1595,13 @@ const ViewDatabase = () => {
                     Function
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                    Lead
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rating
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
                   </th>
                 </tr>
               </thead>
@@ -1813,7 +1616,12 @@ const ViewDatabase = () => {
                           alt={expert.name}
                         />
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{expert.name}</div>
+                          <Link
+                            to={`/expert/${expert.id}`}
+                            className="text-sm font-medium text-frank-blue hover:text-frank-blue/80 transition-colors"
+                          >
+                            {expert.name}
+                          </Link>
                           <div className="text-sm text-gray-500">{expert.email}</div>
                         </div>
                       </div>
@@ -1837,33 +1645,33 @@ const ViewDatabase = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        expert.type === 'Internal' 
-                          ? 'bg-internal-green text-white' 
-                          : 'bg-external-blue text-white'
-                      }`}>
-                        {expert.type === 'Internal' ? (
-                          <Users className="h-3 w-3 mr-1" />
-                        ) : (
-                          <Globe className="h-3 w-3 mr-1" />
-                        )}
-                        {expert.type}
-                      </span>
+                      {expert.lead ? (
+                        <div className="flex items-center text-sm text-gray-900">
+                          <User className="h-3 w-3 mr-1 text-gray-400" />
+                          {expert.lead}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {expert.rating ? (
+                        <StarRating 
+                          rating={expert.rating} 
+                          reviewCount={expert.reviewCount}
+                          size="sm"
+                          interactive={false}
+                          showReviewCount={false}
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-400">No rating</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm">
                         {getAvailabilityIcon(expert.availability)}
                         <span className="ml-1 text-gray-900">{expert.availability}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link
-                        to={`/expert/${expert.id}`}
-                        className="text-frank-blue hover:text-frank-blue/80 flex items-center space-x-1"
-                      >
-                        <span>View Profile</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -1892,6 +1700,863 @@ const ViewDatabase = () => {
 export default ViewDatabase;
 </file>
 
+<file path="src/services/aiExpertService.js">
+import Groq from 'groq-sdk';
+
+const groq = new Groq({
+  apiKey: import.meta.env.VITE_GROQ_API_KEY,
+  dangerouslyAllowBrowser: true
+});
+
+// Helper function to generate unique IDs for AI-generated experts
+const generateId = () => 'ai-' + Math.random().toString(36).substr(2, 9);
+
+// Helper function to generate avatar URLs
+const generateAvatar = (name) => {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366F1&color=fff&size=200`;
+};
+
+// Helper function to determine expert type based on location and context
+const determineExpertType = (location, query) => {
+  // Simple logic: if location is in common internal locations, make internal, otherwise external
+  const internalLocations = ['Chicago', 'New York', 'San Francisco', 'Singapore', 'Perth'];
+  const isInternalLocation = internalLocations.some(loc => location.includes(loc));
+  
+  // Bias towards external for AI-generated experts to show discovery capability
+  return Math.random() > 0.7 && isInternalLocation ? 'Internal' : 'External';
+};
+
+// Helper function to randomly assign a lead from the available names
+const getRandomLead = () => {
+  const leads = ['Daniel', 'Bobby', 'Kamran', 'Pedram', 'Harry'];
+  return leads[Math.floor(Math.random() * leads.length)];
+};
+
+// Main function to generate experts using AI
+export const generateExpertsForQuery = async (searchQuery) => {
+  try {
+    const prompt = `You are an expert discovery system. Based on the search query: "${searchQuery}", generate 2-3 realistic expert profiles that would be perfect matches.
+
+For each expert, provide ONLY a valid JSON object with these exact fields:
+- name: Full professional name (realistic, diverse backgrounds)
+- location: City, State/Country (global locations)
+- industry: One of: Nuclear, Venture Capital, Robotics, AI/ML, Mining, Biotech, Aerospace, Energy, Finance, Healthcare
+- function: One of: Engineering, Finance, Research, Operations, Strategy, Consulting, Academia
+- email: Professional email address
+- phone: International phone number
+- expertise: Array of 4-6 specific technical skills relevant to the query
+- bio: 2-3 sentence professional biography highlighting relevant experience
+- notes: Brief note about their specialization and availability
+- yearsExperience: Number between 8-35
+- certifications: Array of 1-3 relevant professional certifications
+- availability: One of: Available, Busy, Unknown
+
+Note: Do not include a 'lead' field - this will be automatically assigned.
+
+Respond with ONLY a JSON array of 2-3 expert objects. No additional text, explanations, or markdown formatting.
+
+Example format:
+[
+  {
+    "name": "Dr. Jane Smith",
+    "location": "Boston, MA",
+    "industry": "Biotech",
+    "function": "Research",
+    "email": "jane.smith@biotechcorp.com",
+    "phone": "+1 (617) 555-0123",
+    "expertise": ["Gene Therapy", "Clinical Trials", "Regulatory Affairs", "Biomarker Discovery"],
+    "bio": "Leading biotechnology researcher with 15 years in gene therapy development. Published 40+ papers and led 3 successful clinical trials.",
+    "notes": "Expert in rare disease therapeutics. Currently available for consulting projects.",
+    "yearsExperience": 15,
+    "certifications": ["PhD - Harvard Medical", "Clinical Research Certification"],
+    "availability": "Available"
+  }
+]`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      model: 'openai/gpt-oss-120b', // Using available model instead of the specified one
+      temperature: 0.7,
+      max_tokens: 2000,
+    });
+
+    const responseText = completion.choices[0]?.message?.content;
+    
+    if (!responseText) {
+      throw new Error('No response from AI service');
+    }
+
+    // Parse the JSON response
+    let expertsData;
+    try {
+      expertsData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', responseText);
+      // Fallback to hardcoded experts if parsing fails
+      return generateFallbackExperts(searchQuery);
+    }
+
+    // Ensure we have an array
+    if (!Array.isArray(expertsData)) {
+      expertsData = [expertsData];
+    }
+
+    // Process and enhance the generated experts
+    const processedExperts = expertsData.slice(0, 3).map(expert => ({
+      id: generateId(),
+      name: expert.name,
+      photo: generateAvatar(expert.name),
+      location: expert.location,
+      industry: expert.industry,
+      function: expert.function,
+      type: determineExpertType(expert.location, searchQuery),
+      lead: getRandomLead(),
+      email: expert.email,
+      phone: expert.phone,
+      expertise: expert.expertise || [],
+      bio: expert.bio,
+      notes: expert.notes,
+      lastContact: null, // AI-generated experts haven't been contacted yet
+      availability: expert.availability || 'Unknown',
+      yearsExperience: expert.yearsExperience || Math.floor(Math.random() * 20) + 10,
+      certifications: expert.certifications || [],
+      isAIGenerated: true // Flag to track AI-generated experts
+    }));
+
+    return processedExperts;
+
+  } catch (error) {
+    console.error('Error generating experts with AI:', error);
+    // Return fallback experts if AI fails
+    return generateFallbackExperts(searchQuery);
+  }
+};
+
+// Fallback expert generation for when AI fails
+const generateFallbackExperts = (searchQuery) => {
+  const fallbackExperts = [
+    {
+      id: generateId(),
+      name: 'Dr. Alexandra Martinez',
+      photo: generateAvatar('Dr. Alexandra Martinez'),
+      location: 'Barcelona, Spain',
+      industry: getIndustryFromQuery(searchQuery),
+      function: 'Research',
+      type: 'External',
+      lead: getRandomLead(),
+      email: 'a.martinez@techresearch.es',
+      phone: '+34 93 555 0123',
+      expertise: getExpertiseFromQuery(searchQuery),
+      bio: 'International expert with extensive experience in cutting-edge research and development.',
+      notes: 'Highly recommended specialist. Available for strategic consulting and technical reviews.',
+      lastContact: null,
+      availability: 'Available',
+      yearsExperience: 18,
+      certifications: ['PhD - Technical University', 'International Research Fellow'],
+      isAIGenerated: true
+    },
+    {
+      id: generateId(),
+      name: 'Michael Chen',
+      photo: generateAvatar('Michael Chen'),
+      location: 'Vancouver, Canada',
+      industry: getIndustryFromQuery(searchQuery),
+      function: 'Engineering',
+      type: 'External',
+      lead: getRandomLead(),
+      email: 'mchen@innovativetech.ca',
+      phone: '+1 (604) 555-0156',
+      expertise: getExpertiseFromQuery(searchQuery),
+      bio: 'Senior engineer with proven track record in complex technical implementations and team leadership.',
+      notes: 'Excellent problem solver with strong industry connections. Currently taking on new projects.',
+      lastContact: null,
+      availability: 'Available',
+      yearsExperience: 22,
+      certifications: ['Professional Engineer', 'Project Management Professional'],
+      isAIGenerated: true
+    }
+  ];
+
+  return fallbackExperts.slice(0, Math.floor(Math.random() * 2) + 2); // Return 2-3 experts
+};
+
+// Helper functions for fallback expert generation
+const getIndustryFromQuery = (query) => {
+  const lowercaseQuery = query.toLowerCase();
+  if (lowercaseQuery.includes('nuclear')) return 'Nuclear';
+  if (lowercaseQuery.includes('robot')) return 'Robotics';
+  if (lowercaseQuery.includes('ai') || lowercaseQuery.includes('machine learning')) return 'AI/ML';
+  if (lowercaseQuery.includes('mining')) return 'Mining';
+  if (lowercaseQuery.includes('venture') || lowercaseQuery.includes('funding')) return 'Venture Capital';
+  if (lowercaseQuery.includes('bio')) return 'Biotech';
+  if (lowercaseQuery.includes('aerospace') || lowercaseQuery.includes('space')) return 'Aerospace';
+  if (lowercaseQuery.includes('energy')) return 'Energy';
+  return 'Technology';
+};
+
+const getExpertiseFromQuery = (query) => {
+  const lowercaseQuery = query.toLowerCase();
+  const expertiseMap = {
+    nuclear: ['Nuclear Safety', 'Reactor Design', 'Radiation Protection', 'Nuclear Waste Management'],
+    robot: ['Robotics Engineering', 'Automation Systems', 'Computer Vision', 'Motion Control'],
+    ai: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'Data Science'],
+    mining: ['Mining Operations', 'Geological Analysis', 'Equipment Management', 'Safety Protocols'],
+    venture: ['Investment Analysis', 'Due Diligence', 'Portfolio Management', 'Startup Evaluation'],
+    bio: ['Biotechnology', 'Molecular Biology', 'Clinical Research', 'Regulatory Affairs']
+  };
+
+  for (const [key, skills] of Object.entries(expertiseMap)) {
+    if (lowercaseQuery.includes(key)) {
+      return skills;
+    }
+  }
+
+  return ['Strategic Consulting', 'Technical Analysis', 'Project Management', 'Innovation Strategy'];
+};
+</file>
+
+<file path="src/components/ExpertCard.jsx">
+import React from 'react';
+import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle, Brain, Sparkles, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import StarRating from './StarRating';
+
+const ExpertCard = ({ expert, variant = 'default' }) => {
+  const getAvailabilityIcon = () => {
+    switch (expert.availability) {
+      case 'Available':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'Busy':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const getTypeColor = () => {
+    return expert.type === 'Internal' 
+      ? 'bg-internal-green text-white' 
+      : 'bg-external-blue text-white';
+  };
+
+  if (variant === 'compact') {
+    // Compact version for search results
+    return (
+      <Link 
+        to={`/expert/${expert.id}`}
+        className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-4 border border-gray-100"
+      >
+        <div className="flex items-start space-x-4">
+          <img
+            src={expert.photo}
+            alt={expert.name}
+            className="w-16 h-16 rounded-full object-cover ring-2 ring-gray-200"
+          />
+          <div className="flex-1">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 hover:text-frank-blue transition-colors">
+                  {expert.name}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">{expert.expertise[0]}</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor()}`}>
+                  {expert.type}
+                </span>
+                {expert.isAIGenerated && (
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 flex items-center space-x-1">
+                    <Brain className="h-3 w-3" />
+                    <span>Frank</span>
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-500">
+              <div className="flex items-center space-x-1">
+                <MapPin className="h-3 w-3" />
+                <span>{expert.location}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Building2 className="h-3 w-3" />
+                <span>{expert.industry}</span>
+              </div>
+              {expert.lead && (
+                <div className="flex items-center space-x-1">
+                  <User className="h-3 w-3" />
+                  <span>Lead: {expert.lead}</span>
+                </div>
+              )}
+              <div className="flex items-center space-x-1">
+                {getAvailabilityIcon()}
+                <span>{expert.availability}</span>
+              </div>
+            </div>
+            
+            {/* Rating Display */}
+            {expert.rating && (
+              <div className="mt-2">
+                <StarRating 
+                  rating={expert.rating} 
+                  reviewCount={expert.reviewCount}
+                  size="sm"
+                  interactive={false}
+                />
+              </div>
+            )}
+            
+            {expert.expertise.length > 1 && (
+              <div className="flex flex-wrap gap-1 mt-3">
+                {expert.expertise.slice(0, 3).map((skill, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-frank-light-gray text-xs text-gray-700 rounded-full"
+                  >
+                    {skill}
+                  </span>
+                ))}
+                {expert.expertise.length > 3 && (
+                  <span className="px-2 py-1 text-xs text-gray-500">
+                    +{expert.expertise.length - 3} more
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Default full card version
+  return (
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+      <div className="relative">
+        <div className="h-32 bg-gradient-to-r from-frank-blue to-frank-light-blue"></div>
+        <div className="absolute -bottom-12 left-6">
+          <img
+            src={expert.photo}
+            alt={expert.name}
+            className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
+          />
+        </div>
+        <div className="absolute top-4 right-4 flex items-center space-x-2">
+          <span className={`px-3 py-1 text-sm font-medium rounded-full ${getTypeColor()}`}>
+            {expert.type}
+          </span>
+          {expert.isAIGenerated && (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white flex items-center space-x-1">
+              <Sparkles className="h-3 w-3" />
+              <span>Frank</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="pt-14 px-6 pb-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{expert.name}</h2>
+            <p className="text-gray-600 mt-1">{expert.industry} • {expert.function}</p>
+          </div>
+          <div className="flex items-center space-x-1">
+            {getAvailabilityIcon()}
+            <span className="text-sm text-gray-600">{expert.availability}</span>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center space-x-2 text-gray-600">
+            <MapPin className="h-4 w-4 text-gray-400" />
+            <span className="text-sm">{expert.location}</span>
+          </div>
+          {expert.lead && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <User className="h-4 w-4 text-gray-400" />
+              <span className="text-sm">Lead: {expert.lead}</span>
+            </div>
+          )}
+          <div className="flex items-center space-x-2 text-gray-600">
+            <Mail className="h-4 w-4 text-gray-400" />
+            <a href={`mailto:${expert.email}`} className="text-sm hover:text-frank-blue transition-colors">
+              {expert.email}
+            </a>
+          </div>
+          <div className="flex items-center space-x-2 text-gray-600">
+            <Phone className="h-4 w-4 text-gray-400" />
+            <span className="text-sm">{expert.phone}</span>
+          </div>
+        </div>
+
+        {expert.bio && (
+          <p className="text-gray-700 text-sm leading-relaxed mb-4">
+            {expert.bio}
+          </p>
+        )}
+
+        {/* Rating Display */}
+        {expert.rating && (
+          <div className="mb-4 flex justify-center">
+            <StarRating 
+              rating={expert.rating} 
+              reviewCount={expert.reviewCount}
+              size="md"
+              interactive={false}
+            />
+          </div>
+        )}
+
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Expertise Areas</h3>
+          <div className="flex flex-wrap gap-2">
+            {expert.expertise.map((skill, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-frank-light-gray text-sm text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {expert.yearsExperience && (
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div className="text-sm text-gray-600">
+              <span className="font-semibold">{expert.yearsExperience}</span> years experience
+            </div>
+            {expert.lastContact && (
+              <div className="text-sm text-gray-500">
+                Last contact: {new Date(expert.lastContact).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+        )}
+
+        <Link
+          to={`/expert/${expert.id}`}
+          className="mt-4 w-full bg-frank-blue text-white py-2 px-4 rounded-lg hover:bg-frank-blue/90 transition-colors text-center font-medium inline-block"
+        >
+          View Full Profile
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default ExpertCard;
+</file>
+
+<file path="src/components/ExpertProfile.jsx">
+import React, { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, Edit2, Mail, Phone, MapPin, Building2, 
+  Briefcase, Calendar, Award, FileText, Paperclip, 
+  MessageSquare, Clock, CheckCircle, AlertCircle,
+  Download, Share2, Star, Globe, Users, BookOpen, User
+} from 'lucide-react';
+import { getExpertByIdFromAll } from '../data/mockExperts';
+import StarRating from './StarRating';
+
+const ExpertProfile = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const expert = getExpertByIdFromAll(id);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  if (!expert) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Expert not found</h2>
+          <p className="text-gray-600 mb-4">The expert you're looking for doesn't exist.</p>
+          <Link to="/database" className="text-frank-blue hover:underline">
+            Return to Database
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const getAvailabilityStatus = () => {
+    switch (expert.availability) {
+      case 'Available':
+        return { icon: <CheckCircle className="h-5 w-5" />, color: 'text-green-500', bg: 'bg-green-50' };
+      case 'Busy':
+        return { icon: <AlertCircle className="h-5 w-5" />, color: 'text-orange-500', bg: 'bg-orange-50' };
+      default:
+        return { icon: <Clock className="h-5 w-5" />, color: 'text-gray-500', bg: 'bg-gray-50' };
+    }
+  };
+
+  const availabilityStatus = getAvailabilityStatus();
+
+  // Mock files/documents
+  const documents = [
+    { id: 1, name: 'CV_Resume.pdf', size: '2.4 MB', uploadedDate: '2024-01-15' },
+    { id: 2, name: 'Certifications.pdf', size: '1.8 MB', uploadedDate: '2024-01-10' },
+    { id: 3, name: 'Publications_List.docx', size: '856 KB', uploadedDate: '2024-01-05' }
+  ];
+
+  // Mock recent activities
+  const recentActivities = [
+    { id: 1, action: 'Completed project review', date: '2 days ago', type: 'project' },
+    { id: 2, action: 'Updated expertise areas', date: '1 week ago', type: 'update' },
+    { id: 3, action: 'Added new certification', date: '2 weeks ago', type: 'certification' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with back button */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate('/database')}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Back to Database</span>
+            </button>
+            <div className="flex space-x-3">
+              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                <Share2 className="h-5 w-5" />
+              </button>
+              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                <Download className="h-5 w-5" />
+              </button>
+              <Link
+                to={`/update/${expert.id}`}
+                className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span>Edit Expert</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Header */}
+      <div className="bg-gradient-to-r from-frank-blue to-frank-light-blue">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
+            <img
+              src={expert.photo}
+              alt={expert.name}
+              className="w-32 h-32 rounded-full border-4 border-white shadow-xl"
+            />
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
+                <h1 className="text-3xl font-bold text-white">{expert.name}</h1>
+                <div className="flex items-center justify-center md:justify-start space-x-2 mt-2 md:mt-0">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    expert.type === 'Internal' 
+                      ? 'bg-internal-green text-white' 
+                      : 'bg-external-blue text-white'
+                  }`}>
+                    {expert.type === 'Internal' ? <Users className="h-3 w-3 inline mr-1" /> : <Globe className="h-3 w-3 inline mr-1" />}
+                    {expert.type} Expert
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${availabilityStatus.bg} ${availabilityStatus.color} flex items-center space-x-1`}>
+                    {availabilityStatus.icon}
+                    <span>{expert.availability}</span>
+                  </span>
+                </div>
+              </div>
+              
+              <p className="text-blue-100 mt-2">{expert.industry} • {expert.function}</p>
+              
+              {/* Rating Display */}
+              {expert.rating && (
+                <div className="mt-3 flex justify-center md:justify-start">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                    <StarRating 
+                      rating={expert.rating} 
+                      reviewCount={expert.reviewCount}
+                      size="lg"
+                      interactive={false}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex flex-wrap gap-4 mt-4 text-white justify-center md:justify-start">
+                <div className="flex items-center space-x-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{expert.location}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Award className="h-4 w-4" />
+                  <span>{expert.yearsExperience} years experience</span>
+                </div>
+                {expert.certifications && (
+                  <div className="flex items-center space-x-1">
+                    <BookOpen className="h-4 w-4" />
+                    <span>{expert.certifications.length} certifications</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            {['overview', 'expertise', 'notes', 'documents', 'activity'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors ${
+                  activeTab === tab
+                    ? 'border-frank-blue text-frank-blue'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Bio */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Biography</h2>
+                <p className="text-gray-700 leading-relaxed">{expert.bio}</p>
+              </div>
+
+              {/* Contact Information */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+                <div className="space-y-3">
+                  {expert.lead && (
+                    <div className="flex items-center space-x-3">
+                      <User className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Internal Lead</p>
+                        <p className="text-gray-900">{expert.lead}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-3">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <a href={`mailto:${expert.email}`} className="text-frank-blue hover:underline">
+                        {expert.email}
+                      </a>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Phone</p>
+                      <p className="text-gray-900">{expert.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Location</p>
+                      <p className="text-gray-900">{expert.location}</p>
+                    </div>
+                  </div>
+                  {expert.lastContact && (
+                    <div className="flex items-center space-x-3">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-600">Last Contact</p>
+                        <p className="text-gray-900">{new Date(expert.lastContact).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-8">
+              {/* Quick Stats */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Experience</span>
+                    <span className="font-semibold">{expert.yearsExperience} years</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Expertise Areas</span>
+                    <span className="font-semibold">{expert.expertise.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Type</span>
+                    <span className="font-semibold">{expert.type}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Industry</span>
+                    <span className="font-semibold">{expert.industry}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Function</span>
+                    <span className="font-semibold">{expert.function}</span>
+                  </div>
+                  {expert.lead && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Lead</span>
+                      <span className="font-semibold">{expert.lead}</span>
+                    </div>
+                  )}
+                  {expert.rating && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Rating</span>
+                      <div className="flex items-center space-x-1">
+                        <StarRating 
+                          rating={expert.rating} 
+                          reviewCount={0}
+                          size="sm"
+                          interactive={false}
+                          showReviewCount={false}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Certifications */}
+              {expert.certifications && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Certifications</h3>
+                  <div className="space-y-2">
+                    {expert.certifications.map((cert, index) => (
+                      <div key={index} className="flex items-start space-x-2">
+                        <Award className="h-4 w-4 text-frank-blue mt-0.5" />
+                        <span className="text-sm text-gray-700">{cert}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'expertise' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Areas of Expertise</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {expert.expertise.map((skill, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  <span className="text-gray-700">{skill}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notes' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
+              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
+                <MessageSquare className="h-4 w-4" />
+                <span>Add Note</span>
+              </button>
+            </div>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+              <div className="flex items-start space-x-3">
+                <FileText className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-gray-700">{expert.notes}</p>
+                  <p className="text-sm text-gray-500 mt-2">Last updated: {new Date(expert.lastContact).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'documents' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Files & Documents</h2>
+              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
+                <Paperclip className="h-4 w-4" />
+                <span>Upload File</span>
+              </button>
+            </div>
+            <div className="space-y-3">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="font-medium text-gray-900">{doc.name}</p>
+                      <p className="text-sm text-gray-500">{doc.size} • Uploaded {doc.uploadedDate}</p>
+                    </div>
+                  </div>
+                  <button className="p-2 text-frank-blue hover:bg-blue-50 rounded-lg transition-colors">
+                    <Download className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'activity' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activity</h2>
+            <div className="space-y-4">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3 pb-4 border-b border-gray-100 last:border-0">
+                  <div className={`p-2 rounded-full ${
+                    activity.type === 'project' ? 'bg-blue-100' :
+                    activity.type === 'update' ? 'bg-green-100' :
+                    'bg-purple-100'
+                  }`}>
+                    {activity.type === 'project' ? <Briefcase className="h-4 w-4 text-blue-600" /> :
+                     activity.type === 'update' ? <Edit2 className="h-4 w-4 text-green-600" /> :
+                     <Award className="h-4 w-4 text-purple-600" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-900">{activity.action}</p>
+                    <p className="text-sm text-gray-500 mt-1">{activity.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ExpertProfile;
+</file>
+
 <file path="src/data/mockExperts.js">
 export const mockExperts = [
   // Internal Experts
@@ -1903,6 +2568,7 @@ export const mockExperts = [
     industry: 'Nuclear',
     function: 'Engineering',
     type: 'Internal',
+    lead: 'Daniel',
     email: 'sarah.chen@innovera.com',
     phone: '+1 (312) 555-0101',
     expertise: [
@@ -1917,7 +2583,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 18,
     certifications: ['PE - Nuclear', 'NRC Senior Reactor Operator'],
-    bio: 'Dr. Chen is a leading expert in nuclear engineering with extensive experience in reactor design and safety systems. She has consulted for major utilities across North America.'
+    bio: 'Dr. Chen is a leading expert in nuclear engineering with extensive experience in reactor design and safety systems. She has consulted for major utilities across North America.',
+    rating: 4.8,
+    reviewCount: 23
   },
   {
     id: 'int-002',
@@ -1927,6 +2595,7 @@ export const mockExperts = [
     industry: 'Venture Capital',
     function: 'Finance',
     type: 'Internal',
+    lead: 'Bobby',
     email: 'marcus.rodriguez@innovera.com',
     phone: '+1 (212) 555-0102',
     expertise: [
@@ -1942,7 +2611,9 @@ export const mockExperts = [
     availability: 'Busy',
     yearsExperience: 15,
     certifications: ['CFA', 'MBA - Wharton'],
-    bio: 'Marcus has been instrumental in funding over 50 startups, with a focus on transformative technologies. His expertise spans from seed to growth stage investments.'
+    bio: 'Marcus has been instrumental in funding over 50 startups, with a focus on transformative technologies. His expertise spans from seed to growth stage investments.',
+    rating: 4.9,
+    reviewCount: 41
   },
   {
     id: 'int-003',
@@ -1952,6 +2623,7 @@ export const mockExperts = [
     industry: 'Robotics',
     function: 'Research',
     type: 'Internal',
+    lead: 'Kamran',
     email: 'raj.patel@innovera.com',
     phone: '+65 8555-0103',
     expertise: [
@@ -1967,7 +2639,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 20,
     certifications: ['PhD - MIT', 'IEEE Fellow'],
-    bio: 'Dr. Patel pioneered several breakthrough technologies in industrial robotics, including adaptive manufacturing systems now used by Fortune 500 companies.'
+    bio: 'Dr. Patel pioneered several breakthrough technologies in industrial robotics, including adaptive manufacturing systems now used by Fortune 500 companies.',
+    rating: 4.7,
+    reviewCount: 18
   },
   {
     id: 'int-004',
@@ -1977,6 +2651,7 @@ export const mockExperts = [
     industry: 'AI/ML',
     function: 'Research',
     type: 'Internal',
+    lead: 'Pedram',
     email: 'lisa.zhang@innovera.com',
     phone: '+1 (415) 555-0104',
     expertise: [
@@ -1992,7 +2667,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 12,
     certifications: ['PhD - Stanford', 'Google Cloud ML Engineer'],
-    bio: 'Dr. Zhang has been at the forefront of AI research, contributing to major advances in transformer architectures and practical ML applications.'
+    bio: 'Dr. Zhang has been at the forefront of AI research, contributing to major advances in transformer architectures and practical ML applications.',
+    rating: 4.9,
+    reviewCount: 35
   },
   {
     id: 'int-005',
@@ -2002,6 +2679,7 @@ export const mockExperts = [
     industry: 'Mining',
     function: 'Operations',
     type: 'Internal',
+    lead: 'Harry',
     email: 'mike.thompson@innovera.com',
     phone: '+61 8 5555 0105',
     expertise: [
@@ -2017,7 +2695,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 25,
     certifications: ['Mining Engineering - WASM', 'Mine Manager Certificate'],
-    bio: 'Mike has revolutionized mining operations through innovative approaches to automation and sustainability, leading teams of 500+ across multiple continents.'
+    bio: 'Mike has revolutionized mining operations through innovative approaches to automation and sustainability, leading teams of 500+ across multiple continents.',
+    rating: 4.6,
+    reviewCount: 29
   },
   
   // External Experts
@@ -2029,6 +2709,7 @@ export const mockExperts = [
     industry: 'Nuclear',
     function: 'Strategy',
     type: 'External',
+    lead: 'Daniel',
     email: 'j.wilson@oxfordnuclear.ac.uk',
     phone: '+44 20 5555 0201',
     expertise: [
@@ -2044,7 +2725,9 @@ export const mockExperts = [
     availability: 'Unknown',
     yearsExperience: 30,
     certifications: ['PhD - Cambridge', 'Fellow of Royal Society'],
-    bio: 'Professor Wilson is internationally recognized for his work on nuclear safety frameworks adopted by over 20 countries.'
+    bio: 'Professor Wilson is internationally recognized for his work on nuclear safety frameworks adopted by over 20 countries.',
+    rating: 4.5,
+    reviewCount: 12
   },
   {
     id: 'ext-002',
@@ -2054,6 +2737,7 @@ export const mockExperts = [
     industry: 'Venture Capital',
     function: 'Finance',
     type: 'External',
+    lead: 'Bobby',
     email: 'angela@fosteri.com',
     phone: '+1 (650) 555-0202',
     expertise: [
@@ -2069,7 +2753,9 @@ export const mockExperts = [
     availability: 'Busy',
     yearsExperience: 22,
     certifications: ['MBA - Harvard', 'CPA'],
-    bio: 'Angela has been a driving force in Silicon Valley, known for identifying and nurturing breakthrough companies in their early stages.'
+    bio: 'Angela has been a driving force in Silicon Valley, known for identifying and nurturing breakthrough companies in their early stages.',
+    rating: 4.8,
+    reviewCount: 27
   },
   {
     id: 'ext-003',
@@ -2079,6 +2765,7 @@ export const mockExperts = [
     industry: 'Robotics',
     function: 'Engineering',
     type: 'External',
+    lead: 'Kamran',
     email: 'tanaka@tokyorobotics.jp',
     phone: '+81 3 5555 0203',
     expertise: [
@@ -2094,7 +2781,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 28,
     certifications: ['Professional Engineer - Japan', 'Six Sigma Black Belt'],
-    bio: 'Tanaka-san revolutionized automotive manufacturing with his innovative approach to human-robot collaboration, increasing productivity by 40% while improving safety.'
+    bio: 'Tanaka-san revolutionized automotive manufacturing with his innovative approach to human-robot collaboration, increasing productivity by 40% while improving safety.',
+    rating: 4.7,
+    reviewCount: 19
   },
   {
     id: 'ext-004',
@@ -2104,6 +2793,7 @@ export const mockExperts = [
     industry: 'AI/ML',
     function: 'Research',
     type: 'External',
+    lead: 'Pedram',
     email: 'akumar@vectorinstitute.ca',
     phone: '+1 (416) 555-0204',
     expertise: [
@@ -2119,7 +2809,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 14,
     certifications: ['PhD - University of Toronto', 'Canada Research Chair'],
-    bio: 'Dr. Kumar bridges the gap between cutting-edge AI research and practical healthcare applications, with her work impacting millions of patients globally.'
+    bio: 'Dr. Kumar bridges the gap between cutting-edge AI research and practical healthcare applications, with her work impacting millions of patients globally.',
+    rating: 4.9,
+    reviewCount: 33
   },
   {
     id: 'ext-005',
@@ -2129,6 +2821,7 @@ export const mockExperts = [
     industry: 'Mining',
     function: 'Engineering',
     type: 'External',
+    lead: 'Harry',
     email: 'rclarke@miningconsult.ca',
     phone: '+1 (604) 555-0205',
     expertise: [
@@ -2144,7 +2837,9 @@ export const mockExperts = [
     availability: 'Available',
     yearsExperience: 32,
     certifications: ['Professional Geologist', 'SME Registered Member'],
-    bio: 'Robert is known for solving the most challenging mining engineering problems, having worked on projects in over 15 countries across 6 continents.'
+    bio: 'Robert is known for solving the most challenging mining engineering problems, having worked on projects in over 15 countries across 6 continents.',
+    rating: 4.4,
+    reviewCount: 16
   }
 ];
 
@@ -2159,6 +2854,7 @@ export const searchExperts = (query) => {
       expert.location,
       expert.industry,
       expert.function,
+      expert.lead,
       ...expert.expertise,
       expert.notes,
       expert.bio
@@ -2180,75 +2876,74 @@ export const getExpertById = (id) => {
   return mockExperts.find(expert => expert.id === id);
 };
 
+// Store for AI-generated experts (in-memory for demo)
+let aiGeneratedExperts = [];
+
 // Helper function to update expert
 export const updateExpert = (id, updatedData) => {
+  // Check in main experts first
   const index = mockExperts.findIndex(expert => expert.id === id);
   if (index !== -1) {
     mockExperts[index] = { ...mockExperts[index], ...updatedData };
     return mockExperts[index];
   }
+  
+  // Check in AI-generated experts
+  const aiIndex = aiGeneratedExperts.findIndex(expert => expert.id === id);
+  if (aiIndex !== -1) {
+    aiGeneratedExperts[aiIndex] = { ...aiGeneratedExperts[aiIndex], ...updatedData };
+    return aiGeneratedExperts[aiIndex];
+  }
+  
   return null;
 };
-</file>
 
-<file path="src/index.css">
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+// Helper function to add AI-generated experts to the global store
+export const addAIGeneratedExperts = (experts) => {
+  aiGeneratedExperts = [...aiGeneratedExperts, ...experts];
+};
 
-@layer base {
-  body {
-    @apply font-sans antialiased;
-  }
-}
-</file>
+// Helper function to get all experts (including AI-generated)
+export const getAllExperts = () => {
+  return [...mockExperts, ...aiGeneratedExperts];
+};
 
-<file path="src/main.jsx">
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
-import './index.css'
+// Updated search function to include AI-generated experts
+export const searchAllExperts = (query) => {
+  if (!query || query.trim() === '') return [];
+  
+  const allExperts = getAllExperts();
+  const lowercaseQuery = query.toLowerCase();
+  const results = allExperts.filter(expert => {
+    const searchableText = [
+      expert.name,
+      expert.location,
+      expert.industry,
+      expert.function,
+      expert.lead,
+      ...expert.expertise,
+      expert.notes,
+      expert.bio
+    ].join(' ').toLowerCase();
+    
+    return searchableText.includes(lowercaseQuery);
+  });
+  
+  // Sort to show internal experts first
+  return results.sort((a, b) => {
+    if (a.type === 'Internal' && b.type === 'External') return -1;
+    if (a.type === 'External' && b.type === 'Internal') return 1;
+    return 0;
+  });
+};
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>,
-)
-</file>
-
-<file path="tailwind.config.js">
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        'frank-blue': '#0F4C81',
-        'frank-light-blue': '#3B82F6',
-        'frank-gray': '#6B7280',
-        'frank-light-gray': '#F3F4F6',
-        'internal-green': '#10B981',
-        'external-blue': '#3B82F6',
-      }
-    },
-  },
-  plugins: [],
-}
-</file>
-
-<file path="vite.config.js">
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-})
+// Updated getExpertById to check AI-generated experts too
+export const getExpertByIdFromAll = (id) => {
+  const expert = mockExperts.find(expert => expert.id === id);
+  if (expert) return expert;
+  
+  return aiGeneratedExperts.find(expert => expert.id === id);
+};
 </file>
 
 </files>

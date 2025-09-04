@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Sparkles, Users, Globe, TrendingUp, Award, Filter, Linkedin, Twitter, FileText, Building2, UserCheck } from 'lucide-react';
-import { searchExperts, addAIGeneratedExperts, searchAllExperts } from '../data/mockExperts';
+import { Search, Sparkles, Users, Globe, TrendingUp, Award, Brain, Lightbulb, Zap } from 'lucide-react';
+import { getAllExperts, addAIGeneratedExperts } from '../data/mockExperts';
 import { generateExpertsForQuery } from '../services/aiExpertService';
+import { semanticSearchExperts, analyzeSearchQuery } from '../services/aiSearchService';
 import ExpertCard from './ExpertCard';
 
 const FindExpert = () => {
@@ -10,88 +11,94 @@ const FindExpert = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isFindingExperts, setIsFindingExperts] = useState(false);
-  const [searchingSources, setSearchingSources] = useState([]);
+  const [searchMode, setSearchMode] = useState('ai'); // 'ai' or 'keyword'
+  const [queryAnalysis, setQueryAnalysis] = useState(null);
 
   const popularSearches = [
-    'Nuclear safety',
-    'Venture capital funding',
-    'AI and machine learning',
-    'Robotics automation',
-    'Mining operations'
+    'I need someone who understands nuclear safety regulations',
+    'Looking for an expert in AI applications for healthcare',
+    'Need help with venture capital funding for a robotics startup',
+    'Require mining operations consultant for cost reduction',
+    'Seeking expert in sustainable energy solutions'
   ];
 
+  // Enhanced search function with AI
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     setHasSearched(true);
+    setQueryAnalysis(null);
 
-    // Simulate AI processing delay
-    setTimeout(() => {
+    try {
+      const allExperts = getAllExperts();
+      
+      if (searchMode === 'ai') {
+        // AI-powered semantic search
+        const [aiResults, analysis] = await Promise.all([
+          semanticSearchExperts(searchQuery, allExperts),
+          analyzeSearchQuery(searchQuery)
+        ]);
+        
+        setSearchResults(aiResults);
+        setQueryAnalysis(analysis);
+      } else {
+        // Basic keyword search (existing functionality)
+        const results = searchAllExperts(searchQuery);
+        setSearchResults(results);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      // Fallback to basic search
       const results = searchAllExperts(searchQuery);
       setSearchResults(results);
-      setIsSearching(false);
-    }, 800);
+    }
+
+    setIsSearching(false);
   };
 
-  const handleQuickSearch = (term) => {
+  const handleQuickSearch = async (term) => {
     setSearchQuery(term);
     setIsSearching(true);
     setHasSearched(true);
+    setQueryAnalysis(null);
 
-    setTimeout(() => {
+    try {
+      const allExperts = getAllExperts();
+      const [aiResults, analysis] = await Promise.all([
+        semanticSearchExperts(term, allExperts),
+        analyzeSearchQuery(term)
+      ]);
+      
+      setSearchResults(aiResults);
+      setQueryAnalysis(analysis);
+    } catch (error) {
+      console.error('Quick search error:', error);
       const results = searchAllExperts(term);
       setSearchResults(results);
-      setIsSearching(false);
-    }, 800);
+    }
+
+    setIsSearching(false);
   };
 
-  // Sources to simulate searching through
-  const searchSources = [
-    { name: 'LinkedIn', icon: Linkedin, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { name: 'Industry Networks', icon: Building2, color: 'text-gray-600', bgColor: 'bg-gray-50' },
-    { name: 'Research Papers', icon: FileText, color: 'text-green-600', bgColor: 'bg-green-50' },
-    { name: 'Professional Databases', icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { name: 'Expert Directories', icon: UserCheck, color: 'text-orange-600', bgColor: 'bg-orange-50' }
-  ];
-
+  // External expert discovery (existing functionality)
   const handleFindExpert = async () => {
     setIsFindingExperts(true);
-    setSearchingSources([]);
 
-    // Simulate searching through different sources with delays
-    const searchSequence = async () => {
-      for (let i = 0; i < searchSources.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setSearchingSources(prev => [...prev, i]);
-      }
+    try {
+      const aiExperts = await generateExpertsForQuery(searchQuery);
+      addAIGeneratedExperts(aiExperts);
+      
+      const allExperts = getAllExperts();
+      const allResults = await semanticSearchExperts(searchQuery, allExperts);
+      setSearchResults(allResults);
+    } catch (error) {
+      console.error('Error finding experts:', error);
+      setSearchResults([]);
+    }
 
-      // Final delay before showing results
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      try {
-        // Generate experts using AI service
-        const aiExperts = await generateExpertsForQuery(searchQuery);
-        
-        // Add to global store
-        addAIGeneratedExperts(aiExperts);
-        
-        // Update search results
-        const allResults = searchAllExperts(searchQuery);
-        setSearchResults(allResults);
-        
-      } catch (error) {
-        console.error('Error finding experts:', error);
-        // Fallback to just showing a message or empty results
-        setSearchResults([]);
-      }
-
-      setIsFindingExperts(false);
-      setSearchingSources([]);
-    };
-
-    await searchSequence();
+    setIsFindingExperts(false);
   };
 
   const internalExperts = searchResults.filter(e => e.type === 'Internal');
@@ -105,13 +112,41 @@ const FindExpert = () => {
           <div className="text-center">
             <div className="flex justify-center mb-4">
               <div className="bg-white/20 p-3 rounded-full">
-                <Sparkles className="h-8 w-8 text-white" />
+                <Brain className="h-8 w-8 text-white" />
               </div>
             </div>
             <h1 className="text-4xl font-bold mb-4">Find Your Perfect Expert</h1>
             <p className="text-xl text-blue-100 mb-8">
-              Connect with internal experts or discover external specialists for your project
+              Describe what you need in natural language - our AI will find the perfect match
             </p>
+          </div>
+
+          {/* Search Mode Toggle */}
+          <div className="flex justify-center mb-6">
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 flex">
+              <button
+                onClick={() => setSearchMode('ai')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                  searchMode === 'ai' 
+                    ? 'bg-white text-frank-blue' 
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                <Brain className="h-4 w-4" />
+                <span>AI Search</span>
+              </button>
+              <button
+                onClick={() => setSearchMode('keyword')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                  searchMode === 'keyword' 
+                    ? 'bg-white text-frank-blue' 
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                <Search className="h-4 w-4" />
+                <span>Keyword</span>
+              </button>
+            </div>
           </div>
 
           {/* Search Box */}
@@ -121,7 +156,11 @@ const FindExpert = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Describe your project or expertise needed..."
+                placeholder={
+                  searchMode === 'ai' 
+                    ? "Describe what kind of expert you need..." 
+                    : "Enter keywords to search..."
+                }
                 className="w-full px-6 py-4 pr-32 text-gray-900 bg-white rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 text-lg"
               />
               <button
@@ -136,7 +175,7 @@ const FindExpert = () => {
                   </>
                 ) : (
                   <>
-                    <Search className="h-5 w-5" />
+                    {searchMode === 'ai' ? <Brain className="h-5 w-5" /> : <Search className="h-5 w-5" />}
                     <span>Search</span>
                   </>
                 )}
@@ -144,45 +183,70 @@ const FindExpert = () => {
             </div>
           </form>
 
-          {/* Quick Search Tags */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <span className="text-sm text-blue-100">Popular searches:</span>
-            {popularSearches.map((term, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickSearch(term)}
-                className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-sm text-white transition-colors"
-              >
-                {term}
-              </button>
-            ))}
-          </div>
+          {/* AI Search Mode Examples */}
+          {searchMode === 'ai' && (
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <div className="flex items-center space-x-2 mb-2">
+                <Lightbulb className="h-4 w-4 text-blue-200" />
+                <span className="text-sm text-blue-100">Try natural language:</span>
+              </div>
+              {popularSearches.slice(0, 3).map((term, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleQuickSearch(term)}
+                  className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-xs text-white transition-colors max-w-xs truncate"
+                  title={term}
+                >
+                  {term.length > 50 ? term.substring(0, 47) + '...' : term}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Keyword Mode Examples */}
+          {searchMode === 'keyword' && (
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <span className="text-sm text-blue-100">Popular searches:</span>
+              {['nuclear safety', 'venture capital', 'AI machine learning', 'robotics', 'mining'].map((term, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleQuickSearch(term)}
+                  className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-sm text-white transition-colors"
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Stats Section */}
-      {!hasSearched && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Users className="h-8 w-8 text-internal-green mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">Internal Experts</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Globe className="h-8 w-8 text-external-blue mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">External Experts</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">Industries Covered</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Award className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">20+</div>
-              <div className="text-sm text-gray-600">Years Avg. Experience</div>
+      {/* Query Analysis Results */}
+      {queryAnalysis && searchMode === 'ai' && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Zap className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">AI understood your query as:</p>
+                <p className="text-sm text-blue-700 mt-1">{queryAnalysis.intent}</p>
+                {queryAnalysis.suggestions?.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-blue-800 mb-1">Related searches:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {queryAnalysis.suggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleQuickSearch(suggestion)}
+                          className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-xs text-blue-800 rounded transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -197,25 +261,29 @@ const FindExpert = () => {
                 <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No experts found in our database</h3>
                 <p className="text-gray-600 mb-6">
-                  Don't worry! Frank can search external networks to find the perfect experts for your project.
+                  {searchMode === 'ai' 
+                    ? "Our AI couldn't find experts matching your description. Try Frank's external search to discover new experts." 
+                    : "No keyword matches found. Try switching to AI search for better results."}
                 </p>
                 <div className="space-y-3">
+                  {searchMode === 'keyword' && (
+                    <button
+                      onClick={() => {
+                        setSearchMode('ai');
+                        handleSearch({ preventDefault: () => {} });
+                      }}
+                      className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center space-x-2 font-semibold"
+                    >
+                      <Brain className="h-5 w-5" />
+                      <span>Try AI Search</span>
+                    </button>
+                  )}
                   <button
                     onClick={handleFindExpert}
                     className="w-full px-6 py-3 bg-gradient-to-r from-frank-blue to-frank-light-blue text-white rounded-lg hover:from-frank-blue/90 hover:to-frank-light-blue/90 transition-all transform hover:scale-105 flex items-center justify-center space-x-2 font-semibold"
                   >
                     <Sparkles className="h-5 w-5" />
-                    <span>Find Expert</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSearchResults([]);
-                      setHasSearched(false);
-                    }}
-                    className="w-full px-6 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    Clear Search
+                    <span>Find External Experts</span>
                   </button>
                 </div>
               </div>
@@ -223,14 +291,20 @@ const FindExpert = () => {
           ) : (
             <div>
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Found {searchResults.length} expert{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Found {searchResults.length} expert{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                  </h2>
+                  {searchMode === 'ai' && (
+                    <p className="text-sm text-gray-600 mt-1">Results ranked by AI relevance score</p>
+                  )}
+                </div>
                 <button
                   onClick={() => {
                     setSearchQuery('');
                     setSearchResults([]);
                     setHasSearched(false);
+                    setQueryAnalysis(null);
                   }}
                   className="text-sm text-gray-600 hover:text-gray-900 underline"
                 >
@@ -252,7 +326,12 @@ const FindExpert = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {internalExperts.map((expert) => (
-                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
+                      <ExpertCard 
+                        key={expert.id} 
+                        expert={expert} 
+                        variant="compact"
+                        showAIScore={searchMode === 'ai'}
+                      />
                     ))}
                   </div>
                 </div>
@@ -272,7 +351,12 @@ const FindExpert = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {externalExperts.map((expert) => (
-                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
+                      <ExpertCard 
+                        key={expert.id} 
+                        expert={expert} 
+                        variant="compact"
+                        showAIScore={searchMode === 'ai'}
+                      />
                     ))}
                   </div>
                 </div>
@@ -282,7 +366,23 @@ const FindExpert = () => {
         </div>
       )}
 
-      {/* Find Expert Animation */}
+      {/* Loading State */}
+      {isSearching && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white rounded-lg shadow-md p-12">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-frank-blue mb-4"></div>
+              <p className="text-gray-600">
+                {searchMode === 'ai' 
+                  ? 'AI is analyzing your request and finding the best experts...' 
+                  : 'Searching through our expert database...'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* External Search Loading (existing) */}
       {isFindingExperts && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-lg shadow-md p-12">
@@ -293,71 +393,8 @@ const FindExpert = () => {
                   <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-frank-blue animate-pulse" />
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Frank is finding experts for you...</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Frank is finding external experts for you...</h3>
               <p className="text-gray-600">Searching through professional networks and databases</p>
-            </div>
-
-            {/* Sources Animation */}
-            <div className="space-y-4 max-w-md mx-auto">
-              {searchSources.map((source, index) => {
-                const Icon = source.icon;
-                const isSearching = searchingSources.includes(index);
-                const isCompleted = searchingSources.includes(index);
-                
-                return (
-                  <div
-                    key={source.name}
-                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-500 ${
-                      isSearching ? `${source.bgColor} border-2 border-dashed ${source.color.replace('text-', 'border-')}` : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className={`p-2 rounded-full ${isSearching ? 'bg-white' : 'bg-gray-200'} transition-all duration-300`}>
-                      <Icon className={`h-4 w-4 ${isSearching ? source.color : 'text-gray-400'} ${isSearching ? 'animate-pulse' : ''}`} />
-                    </div>
-                    <div className="flex-1">
-                      <div className={`font-medium ${isSearching ? 'text-gray-900' : 'text-gray-500'}`}>
-                        {source.name}
-                      </div>
-                      {isSearching && (
-                        <div className="text-sm text-gray-600 animate-pulse">
-                          Searching...
-                        </div>
-                      )}
-                    </div>
-                    {isCompleted && (
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs text-green-600 font-medium">Found</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Progress indicator */}
-            <div className="mt-8">
-              <div className="bg-gray-200 rounded-full h-2 max-w-md mx-auto">
-                <div 
-                  className="bg-gradient-to-r from-frank-blue to-frank-light-blue h-2 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${(searchingSources.length / searchSources.length) * 100}%` }}
-                ></div>
-              </div>
-              <p className="text-center text-sm text-gray-500 mt-2">
-                {searchingSources.length} of {searchSources.length} sources searched
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {isSearching && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white rounded-lg shadow-md p-12">
-            <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-frank-blue mb-4"></div>
-              <p className="text-gray-600">AI is analyzing your request and finding the best experts...</p>
             </div>
           </div>
         </div>
