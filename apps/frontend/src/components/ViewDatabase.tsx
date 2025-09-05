@@ -28,7 +28,7 @@ const ViewDatabase = () => {
         expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expert.expertise.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
         expert.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expert.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (expert.location && expert.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (expert.lead && expert.lead.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesLocation = locationFilter === 'all' || expert.location === locationFilter;

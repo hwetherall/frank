@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ['nodejs_18']
+
+[phases.install]
+# Install from monorepo root to respect workspace dependencies
+cmds = [
+  'cd ../.. && npm ci --include=dev'
+]
+
+[phases.build]
+# Build from the service directory
+cmds = [
+  'cd ../.. && npm run build:bff'
+]
+
+[start]
+cmd = 'npm start'

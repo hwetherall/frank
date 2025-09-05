@@ -1,6 +1,6 @@
 // @ts-ignore - groq-sdk doesn't have TypeScript declarations
 import Groq from 'groq-sdk';
-import type { Expert, AIExpertResponse, ExpertType, ExpertIndustry, ExpertFunction, ExpertAvailability } from '../types';
+import type { Expert, AIExpertResponse, ExpertType, ExpertFunction, ExpertAvailability, ExpertIndustry } from '../types';
 
 const groq = new Groq({
   apiKey: import.meta.env.VITE_GROQ_API_KEY,
@@ -120,7 +120,7 @@ Example format:
       expertise: expert.expertise || [],
       bio: expert.bio,
       notes: expert.notes,
-      lastContact: null, // AI-generated experts haven't been contacted yet
+      lastContact: undefined, // AI-generated experts haven't been contacted yet
       availability: expert.availability || 'Unknown',
       yearsExperience: expert.yearsExperience || Math.floor(Math.random() * 20) + 10,
       certifications: expert.certifications || [],
@@ -153,7 +153,7 @@ const generateFallbackExperts = (searchQuery: string): Expert[] => {
       expertise: getExpertiseFromQuery(searchQuery),
       bio: 'International expert with extensive experience in cutting-edge research and development.',
       notes: 'Highly recommended specialist. Available for strategic consulting and technical reviews.',
-      lastContact: null,
+      lastContact: undefined,
       availability: 'Available' as ExpertAvailability,
       yearsExperience: 18,
       certifications: ['PhD - Technical University', 'International Research Fellow'],
@@ -173,7 +173,7 @@ const generateFallbackExperts = (searchQuery: string): Expert[] => {
       expertise: getExpertiseFromQuery(searchQuery),
       bio: 'Senior engineer with proven track record in complex technical implementations and team leadership.',
       notes: 'Excellent problem solver with strong industry connections. Currently taking on new projects.',
-      lastContact: null,
+      lastContact: undefined,
       availability: 'Available' as ExpertAvailability,
       yearsExperience: 22,
       certifications: ['Professional Engineer', 'Project Management Professional'],

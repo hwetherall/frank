@@ -24,7 +24,8 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"],
+      "@frank/contracts": ["../../packages/contracts/src/index"]
     }
   },
   "include": ["src"],

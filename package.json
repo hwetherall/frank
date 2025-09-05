@@ -3,25 +3,23 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "groq-sdk": "^0.31.0",
-    "lucide-react": "^0.294.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.18.0"
+    "dev": "concurrently -n \"frontend,bff,worker\" -c \"cyan,magenta,yellow\" \"npm run dev:frontend\" \"npm run dev:bff\" \"npm run dev:worker\"",
+    "build": "npm run build:frontend && npm run build:bff && npm run build:worker",
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "dev:bff": "npm run dev --workspace=apps/bff",
+    "build:bff": "npm run build --workspace=apps/bff",
+    "dev:worker": "npm run dev --workspace=apps/worker",
+    "build:worker": "npm run build --workspace=apps/worker"
   },
   "devDependencies": {
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.0",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.3.6",
-    "vite": "^5.0.8"
+    "@types/node": "^20.10.4",
+    "typescript": "^5.3.3",
+    "concurrently": "^8.2.2"
   }
 }
