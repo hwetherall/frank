@@ -6,11 +6,11 @@ import ExpertCard from './ExpertCard';
 
 const FindExpert = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults]: any = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isFindingExperts, setIsFindingExperts] = useState(false);
-  const [searchingSources, setSearchingSources] = useState([]);
+  const [searchingSources, setSearchingSources]: any = useState([]);
 
   const popularSearches = [
     'Nuclear safety',
@@ -20,7 +20,7 @@ const FindExpert = () => {
     'Mining operations'
   ];
 
-  const handleSearch = async (e) => {
+  const handleSearch = async (e: any) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
@@ -35,7 +35,7 @@ const FindExpert = () => {
     }, 800);
   };
 
-  const handleQuickSearch = (term) => {
+  const handleQuickSearch = (term: any) => {
     setSearchQuery(term);
     setIsSearching(true);
     setHasSearched(true);

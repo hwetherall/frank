@@ -1,4 +1,6 @@
+// @ts-ignore - groq-sdk doesn't have TypeScript declarations
 import Groq from 'groq-sdk';
+import type { Expert, AIExpertResponse, ExpertType, ExpertIndustry, ExpertFunction, ExpertAvailability } from '../types';
 
 const groq = new Groq({
   apiKey: import.meta.env.VITE_GROQ_API_KEY,
@@ -6,15 +8,15 @@ const groq = new Groq({
 });
 
 // Helper function to generate unique IDs for AI-generated experts
-const generateId = () => 'ai-' + Math.random().toString(36).substr(2, 9);
+const generateId = (): string => 'ai-' + Math.random().toString(36).substr(2, 9);
 
 // Helper function to generate avatar URLs
-const generateAvatar = (name) => {
+const generateAvatar = (name: string): string => {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366F1&color=fff&size=200`;
 };
 
 // Helper function to determine expert type based on location and context
-const determineExpertType = (location, query) => {
+const determineExpertType = (location: string, _query: string): ExpertType => {
   // Simple logic: if location is in common internal locations, make internal, otherwise external
   const internalLocations = ['Chicago', 'New York', 'San Francisco', 'Singapore', 'Perth'];
   const isInternalLocation = internalLocations.some(loc => location.includes(loc));
@@ -24,13 +26,13 @@ const determineExpertType = (location, query) => {
 };
 
 // Helper function to randomly assign a lead from the available names
-const getRandomLead = () => {
+const getRandomLead = (): string => {
   const leads = ['Daniel', 'Bobby', 'Kamran', 'Pedram', 'Harry'];
   return leads[Math.floor(Math.random() * leads.length)];
 };
 
 // Main function to generate experts using AI
-export const generateExpertsForQuery = async (searchQuery) => {
+export const generateExpertsForQuery = async (searchQuery: string): Promise<Expert[]> => {
   try {
     const prompt = `You are an expert discovery system. Based on the search query: "${searchQuery}", generate 2-3 realistic expert profiles that would be perfect matches.
 
@@ -89,7 +91,7 @@ Example format:
     }
 
     // Parse the JSON response
-    let expertsData;
+    let expertsData: AIExpertResponse[];
     try {
       expertsData = JSON.parse(responseText);
     } catch (parseError) {
@@ -104,7 +106,7 @@ Example format:
     }
 
     // Process and enhance the generated experts
-    const processedExperts = expertsData.slice(0, 3).map(expert => ({
+    const processedExperts: Expert[] = expertsData.slice(0, 3).map(expert => ({
       id: generateId(),
       name: expert.name,
       photo: generateAvatar(expert.name),
@@ -135,16 +137,16 @@ Example format:
 };
 
 // Fallback expert generation for when AI fails
-const generateFallbackExperts = (searchQuery) => {
-  const fallbackExperts = [
+const generateFallbackExperts = (searchQuery: string): Expert[] => {
+  const fallbackExperts: Expert[] = [
     {
       id: generateId(),
       name: 'Dr. Alexandra Martinez',
       photo: generateAvatar('Dr. Alexandra Martinez'),
       location: 'Barcelona, Spain',
       industry: getIndustryFromQuery(searchQuery),
-      function: 'Research',
-      type: 'External',
+      function: 'Research' as ExpertFunction,
+      type: 'External' as ExpertType,
       lead: getRandomLead(),
       email: 'a.martinez@techresearch.es',
       phone: '+34 93 555 0123',
@@ -152,7 +154,7 @@ const generateFallbackExperts = (searchQuery) => {
       bio: 'International expert with extensive experience in cutting-edge research and development.',
       notes: 'Highly recommended specialist. Available for strategic consulting and technical reviews.',
       lastContact: null,
-      availability: 'Available',
+      availability: 'Available' as ExpertAvailability,
       yearsExperience: 18,
       certifications: ['PhD - Technical University', 'International Research Fellow'],
       isAIGenerated: true
@@ -163,8 +165,8 @@ const generateFallbackExperts = (searchQuery) => {
       photo: generateAvatar('Michael Chen'),
       location: 'Vancouver, Canada',
       industry: getIndustryFromQuery(searchQuery),
-      function: 'Engineering',
-      type: 'External',
+      function: 'Engineering' as ExpertFunction,
+      type: 'External' as ExpertType,
       lead: getRandomLead(),
       email: 'mchen@innovativetech.ca',
       phone: '+1 (604) 555-0156',
@@ -172,7 +174,7 @@ const generateFallbackExperts = (searchQuery) => {
       bio: 'Senior engineer with proven track record in complex technical implementations and team leadership.',
       notes: 'Excellent problem solver with strong industry connections. Currently taking on new projects.',
       lastContact: null,
-      availability: 'Available',
+      availability: 'Available' as ExpertAvailability,
       yearsExperience: 22,
       certifications: ['Professional Engineer', 'Project Management Professional'],
       isAIGenerated: true
@@ -183,7 +185,7 @@ const generateFallbackExperts = (searchQuery) => {
 };
 
 // Helper functions for fallback expert generation
-const getIndustryFromQuery = (query) => {
+const getIndustryFromQuery = (query: string): ExpertIndustry => {
   const lowercaseQuery = query.toLowerCase();
   if (lowercaseQuery.includes('nuclear')) return 'Nuclear';
   if (lowercaseQuery.includes('robot')) return 'Robotics';
@@ -196,9 +198,9 @@ const getIndustryFromQuery = (query) => {
   return 'Technology';
 };
 
-const getExpertiseFromQuery = (query) => {
+const getExpertiseFromQuery = (query: string): string[] => {
   const lowercaseQuery = query.toLowerCase();
-  const expertiseMap = {
+  const expertiseMap: Record<string, string[]> = {
     nuclear: ['Nuclear Safety', 'Reactor Design', 'Radiation Protection', 'Nuclear Waste Management'],
     robot: ['Robotics Engineering', 'Automation Systems', 'Computer Vision', 'Motion Control'],
     ai: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'Data Science'],

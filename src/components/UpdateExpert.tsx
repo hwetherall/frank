@@ -8,18 +8,18 @@ import {
 import { getExpertById, updateExpert } from '../data/mockExperts';
 
 const UpdateExpert = () => {
-  const { id } = useParams();
+  const { id }: any = useParams();
   const navigate = useNavigate();
   const originalExpert = getExpertById(id);
   
-  const [formData, setFormData] = useState(originalExpert ? {
+  const [formData, setFormData]: any = useState(originalExpert ? {
     ...originalExpert,
     newExpertise: '',
     newCertification: ''
   } : null);
   
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors]: any = useState({});
 
   if (!originalExpert) {
     return (
@@ -35,7 +35,7 @@ const UpdateExpert = () => {
     );
   }
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -57,7 +57,7 @@ const UpdateExpert = () => {
     }
   };
 
-  const handleExpertiseRemove = (index) => {
+  const handleExpertiseRemove = (index: any) => {
     setFormData(prev => ({
       ...prev,
       expertise: prev.expertise.filter((_, i) => i !== index)
@@ -74,7 +74,7 @@ const UpdateExpert = () => {
     }
   };
 
-  const handleCertificationRemove = (index) => {
+  const handleCertificationRemove = (index: any) => {
     setFormData(prev => ({
       ...prev,
       certifications: prev.certifications.filter((_, i) => i !== index)
@@ -82,7 +82,7 @@ const UpdateExpert = () => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const newErrors: any = {};
     
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
@@ -99,7 +99,7 @@ const UpdateExpert = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     
     if (!validateForm()) {

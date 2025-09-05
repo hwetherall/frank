@@ -10,7 +10,7 @@ import { getExpertByIdFromAll } from '../data/mockExperts';
 import StarRating from './StarRating';
 
 const ExpertProfile = () => {
-  const { id } = useParams();
+  const { id }: any = useParams();
   const navigate = useNavigate();
   const expert = getExpertByIdFromAll(id);
   const [activeTab, setActiveTab] = useState('overview');
@@ -334,7 +334,7 @@ const ExpertProfile = () => {
                 <FileText className="h-5 w-5 text-yellow-600 mt-0.5" />
                 <div>
                   <p className="text-gray-700">{expert.notes}</p>
-                  <p className="text-sm text-gray-500 mt-2">Last updated: {new Date(expert.lastContact).toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-500 mt-2">Last updated: {expert.lastContact ? new Date(expert.lastContact).toLocaleDateString() : 'Unknown'}</p>
                 </div>
               </div>
             </div>

@@ -1,13 +1,15 @@
-export const mockExperts = [
+import type { Expert, ExpertIndustry, ExpertFunction, ExpertType, ExpertAvailability } from '../types';
+
+export const mockExperts: Expert[] = [
   // Internal Experts
   {
     id: 'int-001',
     name: 'Dr. Sarah Chen',
     photo: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=10B981&color=fff&size=200',
     location: 'Chicago, IL',
-    industry: 'Nuclear',
-    function: 'Engineering',
-    type: 'Internal',
+    industry: 'Nuclear' as ExpertIndustry,
+    function: 'Engineering' as ExpertFunction,
+    type: 'Internal' as ExpertType,
     lead: 'Daniel',
     email: 'sarah.chen@innovera.com',
     phone: '+1 (312) 555-0101',
@@ -20,7 +22,7 @@ export const mockExperts = [
     ],
     notes: 'Led the safety review for 3 major nuclear facilities. Published 15 papers on reactor safety. Fluent in Mandarin and English. Available for complex safety assessments and regulatory reviews.',
     lastContact: '2024-01-15',
-    availability: 'Available',
+    availability: 'Available' as ExpertAvailability,
     yearsExperience: 18,
     certifications: ['PE - Nuclear', 'NRC Senior Reactor Operator'],
     bio: 'Dr. Chen is a leading expert in nuclear engineering with extensive experience in reactor design and safety systems. She has consulted for major utilities across North America.',
@@ -32,9 +34,9 @@ export const mockExperts = [
     name: 'Marcus Rodriguez',
     photo: 'https://ui-avatars.com/api/?name=Marcus+Rodriguez&background=10B981&color=fff&size=200',
     location: 'New York, NY',
-    industry: 'Venture Capital',
-    function: 'Finance',
-    type: 'Internal',
+    industry: 'Venture Capital' as ExpertIndustry,
+    function: 'Finance' as ExpertFunction,
+    type: 'Internal' as ExpertType,
     lead: 'Bobby',
     email: 'marcus.rodriguez@innovera.com',
     phone: '+1 (212) 555-0102',
@@ -48,7 +50,7 @@ export const mockExperts = [
     ],
     notes: 'Successfully raised $2.3B across 4 funds. Portfolio includes 3 unicorns. Strong network in Silicon Valley and NYC. Specializes in deep tech and clean energy investments.',
     lastContact: '2024-01-20',
-    availability: 'Busy',
+    availability: 'Busy' as ExpertAvailability,
     yearsExperience: 15,
     certifications: ['CFA', 'MBA - Wharton'],
     bio: 'Marcus has been instrumental in funding over 50 startups, with a focus on transformative technologies. His expertise spans from seed to growth stage investments.',
@@ -60,9 +62,9 @@ export const mockExperts = [
     name: 'Dr. Raj Patel',
     photo: 'https://ui-avatars.com/api/?name=Raj+Patel&background=10B981&color=fff&size=200',
     location: 'Singapore',
-    industry: 'Robotics',
-    function: 'Research',
-    type: 'Internal',
+    industry: 'Robotics' as ExpertIndustry,
+    function: 'Research' as ExpertFunction,
+    type: 'Internal' as ExpertType,
     lead: 'Kamran',
     email: 'raj.patel@innovera.com',
     phone: '+65 8555-0103',
@@ -76,7 +78,7 @@ export const mockExperts = [
     ],
     notes: 'Holds 22 patents in robotics. Former lead at Boston Dynamics. Currently working on autonomous manufacturing systems. Available for consulting on large-scale automation projects.',
     lastContact: '2024-01-18',
-    availability: 'Available',
+    availability: 'Available' as ExpertAvailability,
     yearsExperience: 20,
     certifications: ['PhD - MIT', 'IEEE Fellow'],
     bio: 'Dr. Patel pioneered several breakthrough technologies in industrial robotics, including adaptive manufacturing systems now used by Fortune 500 companies.',
@@ -88,9 +90,9 @@ export const mockExperts = [
     name: 'Dr. Lisa Zhang',
     photo: 'https://ui-avatars.com/api/?name=Lisa+Zhang&background=10B981&color=fff&size=200',
     location: 'San Francisco, CA',
-    industry: 'AI/ML',
-    function: 'Research',
-    type: 'Internal',
+    industry: 'AI/ML' as ExpertIndustry,
+    function: 'Research' as ExpertFunction,
+    type: 'Internal' as ExpertType,
     lead: 'Pedram',
     email: 'lisa.zhang@innovera.com',
     phone: '+1 (415) 555-0104',
@@ -104,7 +106,7 @@ export const mockExperts = [
     ],
     notes: 'Former Google Brain researcher. Published 40+ papers in top ML conferences. Expert in large language models and their applications. Currently leading our AI initiatives.',
     lastContact: '2024-01-22',
-    availability: 'Available',
+    availability: 'Available' as ExpertAvailability,
     yearsExperience: 12,
     certifications: ['PhD - Stanford', 'Google Cloud ML Engineer'],
     bio: 'Dr. Zhang has been at the forefront of AI research, contributing to major advances in transformer architectures and practical ML applications.',
@@ -116,9 +118,9 @@ export const mockExperts = [
     name: 'Mike Thompson',
     photo: 'https://ui-avatars.com/api/?name=Mike+Thompson&background=10B981&color=fff&size=200',
     location: 'Perth, Australia',
-    industry: 'Mining',
-    function: 'Operations',
-    type: 'Internal',
+    industry: 'Mining' as ExpertIndustry,
+    function: 'Operations' as ExpertFunction,
+    type: 'Internal' as ExpertType,
     lead: 'Harry',
     email: 'mike.thompson@innovera.com',
     phone: '+61 8 5555 0105',
@@ -132,7 +134,7 @@ export const mockExperts = [
     ],
     notes: 'Managed operations for 5 major mines across Australia and Chile. Reduced operational costs by 30% at Rio Tinto sites. Expert in autonomous mining equipment deployment.',
     lastContact: '2024-01-19',
-    availability: 'Available',
+    availability: 'Available' as ExpertAvailability,
     yearsExperience: 25,
     certifications: ['Mining Engineering - WASM', 'Mine Manager Certificate'],
     bio: 'Mike has revolutionized mining operations through innovative approaches to automation and sustainability, leading teams of 500+ across multiple continents.',
@@ -146,9 +148,9 @@ export const mockExperts = [
     name: 'Prof. James Wilson',
     photo: 'https://ui-avatars.com/api/?name=James+Wilson&background=3B82F6&color=fff&size=200',
     location: 'London, UK',
-    industry: 'Nuclear',
-    function: 'Strategy',
-    type: 'External',
+    industry: 'Nuclear' as ExpertIndustry,
+    function: 'Strategy' as ExpertFunction,
+    type: 'External' as ExpertType,
     lead: 'Daniel',
     email: 'j.wilson@oxfordnuclear.ac.uk',
     phone: '+44 20 5555 0201',
@@ -162,7 +164,7 @@ export const mockExperts = [
     ],
     notes: 'Oxford professor and IAEA consultant. Written 3 textbooks on nuclear safety. Advises UK government on nuclear policy. Available for high-level strategic consulting.',
     lastContact: '2024-01-10',
-    availability: 'Unknown',
+    availability: 'Unknown' as ExpertAvailability,
     yearsExperience: 30,
     certifications: ['PhD - Cambridge', 'Fellow of Royal Society'],
     bio: 'Professor Wilson is internationally recognized for his work on nuclear safety frameworks adopted by over 20 countries.',
@@ -174,9 +176,9 @@ export const mockExperts = [
     name: 'Angela Foster',
     photo: 'https://ui-avatars.com/api/?name=Angela+Foster&background=3B82F6&color=fff&size=200',
     location: 'Silicon Valley, CA',
-    industry: 'Venture Capital',
-    function: 'Finance',
-    type: 'External',
+    industry: 'Venture Capital' as ExpertIndustry,
+    function: 'Finance' as ExpertFunction,
+    type: 'External' as ExpertType,
     lead: 'Bobby',
     email: 'angela@fosteri.com',
     phone: '+1 (650) 555-0202',
@@ -190,7 +192,7 @@ export const mockExperts = [
     ],
     notes: 'Partner at Sequoia Capital for 10 years. Currently runs own fund focused on climate tech. Invested in 8 companies that achieved $1B+ valuations.',
     lastContact: '2023-12-15',
-    availability: 'Busy',
+    availability: 'Busy' as ExpertAvailability,
     yearsExperience: 22,
     certifications: ['MBA - Harvard', 'CPA'],
     bio: 'Angela has been a driving force in Silicon Valley, known for identifying and nurturing breakthrough companies in their early stages.',
@@ -202,9 +204,9 @@ export const mockExperts = [
     name: 'Hiroshi Tanaka',
     photo: 'https://ui-avatars.com/api/?name=Hiroshi+Tanaka&background=3B82F6&color=fff&size=200',
     location: 'Tokyo, Japan',
-    industry: 'Robotics',
-    function: 'Engineering',
-    type: 'External',
+    industry: 'Robotics' as ExpertIndustry,
+    function: 'Engineering' as ExpertFunction,
+    type: 'External' as ExpertType,
     lead: 'Kamran',
     email: 'tanaka@tokyorobotics.jp',
     phone: '+81 3 5555 0203',
@@ -218,7 +220,7 @@ export const mockExperts = [
     ],
     notes: 'Former Toyota chief robotics engineer. Developed cobots used in 200+ factories worldwide. Speaks Japanese, English, and Mandarin. Expert in Japanese manufacturing principles.',
     lastContact: '2024-01-05',
-    availability: 'Available',
+    availability: 'Available' as ExpertAvailability,
     yearsExperience: 28,
     certifications: ['Professional Engineer - Japan', 'Six Sigma Black Belt'],
     bio: 'Tanaka-san revolutionized automotive manufacturing with his innovative approach to human-robot collaboration, increasing productivity by 40% while improving safety.',
@@ -230,9 +232,9 @@ export const mockExperts = [
     name: 'Dr. Amanda Kumar',
     photo: 'https://ui-avatars.com/api/?name=Amanda+Kumar&background=3B82F6&color=fff&size=200',
     location: 'Toronto, Canada',
-    industry: 'AI/ML',
-    function: 'Research',
-    type: 'External',
+    industry: 'AI/ML' as ExpertIndustry,
+    function: 'Research' as ExpertFunction,
+    type: 'External' as ExpertType,
     lead: 'Pedram',
     email: 'akumar@vectorinstitute.ca',
     phone: '+1 (416) 555-0204',
@@ -246,7 +248,7 @@ export const mockExperts = [
     ],
     notes: 'Director at Vector Institute. Pioneered AI applications in medical imaging that are FDA approved. Published 60+ papers. Strong advocate for responsible AI development.',
     lastContact: '2024-01-12',
-    availability: 'Available',
+    availability: 'Available' as ExpertAvailability,
     yearsExperience: 14,
     certifications: ['PhD - University of Toronto', 'Canada Research Chair'],
     bio: 'Dr. Kumar bridges the gap between cutting-edge AI research and practical healthcare applications, with her work impacting millions of patients globally.',
@@ -258,9 +260,9 @@ export const mockExperts = [
     name: 'Robert Clarke',
     photo: 'https://ui-avatars.com/api/?name=Robert+Clarke&background=3B82F6&color=fff&size=200',
     location: 'Vancouver, Canada',
-    industry: 'Mining',
-    function: 'Engineering',
-    type: 'External',
+    industry: 'Mining' as ExpertIndustry,
+    function: 'Engineering' as ExpertFunction,
+    type: 'External' as ExpertType,
     lead: 'Harry',
     email: 'rclarke@miningconsult.ca',
     phone: '+1 (604) 555-0205',
@@ -274,7 +276,7 @@ export const mockExperts = [
     ],
     notes: 'Consulted on 50+ mining projects globally. Expert in complex underground operations. Developed new techniques for ore extraction that increased yields by 25%. Available for technical reviews.',
     lastContact: '2024-01-08',
-    availability: 'Available',
+    availability: 'Available' as ExpertAvailability,
     yearsExperience: 32,
     certifications: ['Professional Geologist', 'SME Registered Member'],
     bio: 'Robert is known for solving the most challenging mining engineering problems, having worked on projects in over 15 countries across 6 continents.',
@@ -284,7 +286,7 @@ export const mockExperts = [
 ];
 
 // Helper function to search experts
-export const searchExperts = (query) => {
+export const searchExperts = (query: string): Expert[] => {
   if (!query || query.trim() === '') return [];
   
   const lowercaseQuery = query.toLowerCase();
@@ -294,7 +296,7 @@ export const searchExperts = (query) => {
       expert.location,
       expert.industry,
       expert.function,
-      expert.lead,
+      expert.lead || '',
       ...expert.expertise,
       expert.notes,
       expert.bio
@@ -312,15 +314,15 @@ export const searchExperts = (query) => {
 };
 
 // Helper function to get expert by ID
-export const getExpertById = (id) => {
+export const getExpertById = (id: string): Expert | undefined => {
   return mockExperts.find(expert => expert.id === id);
 };
 
 // Store for AI-generated experts (in-memory for demo)
-let aiGeneratedExperts = [];
+let aiGeneratedExperts: Expert[] = [];
 
 // Helper function to update expert
-export const updateExpert = (id, updatedData) => {
+export const updateExpert = (id: string, updatedData: Partial<Expert>): Expert | null => {
   // Check in main experts first
   const index = mockExperts.findIndex(expert => expert.id === id);
   if (index !== -1) {
@@ -339,17 +341,17 @@ export const updateExpert = (id, updatedData) => {
 };
 
 // Helper function to add AI-generated experts to the global store
-export const addAIGeneratedExperts = (experts) => {
+export const addAIGeneratedExperts = (experts: Expert[]): void => {
   aiGeneratedExperts = [...aiGeneratedExperts, ...experts];
 };
 
 // Helper function to get all experts (including AI-generated)
-export const getAllExperts = () => {
+export const getAllExperts = (): Expert[] => {
   return [...mockExperts, ...aiGeneratedExperts];
 };
 
 // Updated search function to include AI-generated experts
-export const searchAllExperts = (query) => {
+export const searchAllExperts = (query: string): Expert[] => {
   if (!query || query.trim() === '') return [];
   
   const allExperts = getAllExperts();
@@ -360,7 +362,7 @@ export const searchAllExperts = (query) => {
       expert.location,
       expert.industry,
       expert.function,
-      expert.lead,
+      expert.lead || '',
       ...expert.expertise,
       expert.notes,
       expert.bio
@@ -378,7 +380,7 @@ export const searchAllExperts = (query) => {
 };
 
 // Updated getExpertById to check AI-generated experts too
-export const getExpertByIdFromAll = (id) => {
+export const getExpertByIdFromAll = (id: string): Expert | undefined => {
   const expert = mockExperts.find(expert => expert.id === id);
   if (expert) return expert;
   

@@ -6,9 +6,9 @@ const StarRating = ({
   reviewCount = 0, 
   size = 'md', 
   interactive = false, 
-  onRatingChange = null,
+  onRatingChange,
   showReviewCount = true 
-}) => {
+}: any) => {
   const [hoverRating, setHoverRating] = useState(0);
   const [currentRating, setCurrentRating] = useState(rating);
 
@@ -46,7 +46,7 @@ const StarRating = ({
   const activeRating = hoverRating || displayRating;
 
   const renderStars = () => {
-    const stars = [];
+    const stars: JSX.Element[] = [];
     for (let i = 1; i <= 5; i++) {
       const isFilled = i <= Math.floor(activeRating);
       const isHalfFilled = i === Math.ceil(activeRating) && activeRating % 1 !== 0;
