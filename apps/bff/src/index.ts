@@ -1,6 +1,7 @@
 // BFF Test Service
 import { ExpertSchema } from '@frank/contracts';
 import { getSupabaseInfo } from '@frank/db';
+import http from 'http';
 
 console.log('🚀 BFF Service Starting...');
 
@@ -25,3 +26,24 @@ process.on('SIGINT', () => {
 });
 
 console.log('✅ BFF Service Started - Logging every minute');
+
+// Start HTTP server for health checks and future API endpoints
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'healthy', 
+      service: 'bff',
+      timestamp: new Date().toISOString() 
+    }));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+
+server.listen(PORT, () => {
+  console.log(`🌐 BFF HTTP server listening on port ${PORT}`);
+});
