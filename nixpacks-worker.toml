@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = ['nodejs_18']
+
+[phases.install]
+cmds = [
+  'npm ci --include=dev'
+]
+
+[phases.build]
+cmds = [
+  'npm run build:worker'
+]
+
+[start]
+cmd = 'cd apps/worker && npm start'
+
+[variables]
+NODE_ENV = 'production'
