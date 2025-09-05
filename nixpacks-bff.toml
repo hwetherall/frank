@@ -6,10 +6,11 @@ cmds = [
   'npm ci --include=dev'
 ]
 
-[phases.build]
-cmds = [
-  'npm run build:bff'
-]
+# Skip build phase - using tsx to run TypeScript directly
+# [phases.build]
+# cmds = [
+#   'npm run build:bff'
+# ]
 
 [start]
 cmd = 'cd apps/bff && npm start'

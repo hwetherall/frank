@@ -6,10 +6,11 @@ cmds = [
   'npm ci --include=dev'
 ]
 
-[phases.build]
-cmds = [
-  'npm run build:worker'
-]
+# Skip build phase - using tsx to run TypeScript directly
+# [phases.build]
+# cmds = [
+#   'npm run build:worker'
+# ]
 
 [start]
 cmd = 'cd apps/worker && npm start'
