@@ -1,9 +1,9 @@
 import React from 'react';
-import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle, Brain, Sparkles, User } from 'lucide-react';
+import { MapPin, Building2, Briefcase, Mail, Phone, Clock, CheckCircle, AlertCircle, Brain, Sparkles, User, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StarRating from './StarRating';
 
-const ExpertCard = ({ expert, variant = 'default' }) => {
+const ExpertCard = ({ expert, variant = 'default', showAIScore = false }) => {
   const getAvailabilityIcon = () => {
     switch (expert.availability) {
       case 'Available':
@@ -19,6 +19,20 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
     return expert.type === 'Internal' 
       ? 'bg-internal-green text-white' 
       : 'bg-external-blue text-white';
+  };
+
+  const getAIScoreColor = (score) => {
+    if (score >= 0.8) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 0.6) return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (score >= 0.4) return 'text-orange-600 bg-orange-50 border-orange-200';
+    return 'text-gray-600 bg-gray-50 border-gray-200';
+  };
+
+  const getAIScoreLabel = (score) => {
+    if (score >= 0.8) return 'Excellent Match';
+    if (score >= 0.6) return 'Good Match';
+    if (score >= 0.4) return 'Partial Match';
+    return 'Low Match';
   };
 
   if (variant === 'compact') {
@@ -54,6 +68,26 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
                 )}
               </div>
             </div>
+            
+            {/* AI Score and Explanation */}
+            {showAIScore && expert.aiScore !== undefined && (
+              <div className={`mt-3 p-3 rounded-lg border ${getAIScoreColor(expert.aiScore)}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Target className="h-4 w-4" />
+                    <span className="text-sm font-medium">{getAIScoreLabel(expert.aiScore)}</span>
+                  </div>
+                  <span className="text-sm font-mono">
+                    {Math.round(expert.aiScore * 100)}%
+                  </span>
+                </div>
+                {expert.matchExplanation && (
+                  <p className="text-xs leading-relaxed">
+                    {expert.matchExplanation}
+                  </p>
+                )}
+              </div>
+            )}
             
             <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-500">
               <div className="flex items-center space-x-1">
@@ -137,6 +171,26 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
       </div>
 
       <div className="pt-14 px-6 pb-6">
+        {/* AI Score Display for Full Card */}
+        {showAIScore && expert.aiScore !== undefined && (
+          <div className={`mb-4 p-4 rounded-lg border ${getAIScoreColor(expert.aiScore)}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Target className="h-5 w-5" />
+                <span className="font-medium">{getAIScoreLabel(expert.aiScore)}</span>
+              </div>
+              <span className="text-lg font-mono font-bold">
+                {Math.round(expert.aiScore * 100)}%
+              </span>
+            </div>
+            {expert.matchExplanation && (
+              <p className="text-sm leading-relaxed">
+                {expert.matchExplanation}
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{expert.name}</h2>
