@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { Search, Sparkles, Users, Globe, TrendingUp, Award, Filter, Linkedin, Twitter, FileText, Building2, UserCheck } from 'lucide-react';
-import { searchExperts, addAIGeneratedExperts, searchAllExperts } from '../data/mockExperts';
+import React, { useState, useEffect } from 'react';
+import { Search, Sparkles, Users, Globe, TrendingUp, Award, Filter, Linkedin, Twitter, FileText, Building2, UserCheck, Brain, Database } from 'lucide-react';
+import { searchContacts, getAllContacts, transformContactToExpert } from '../services/contactsService';
+import { semanticSearch } from '../services/vectorUploader';
 import { generateExpertsForQuery } from '../services/aiExpertService';
+import { searchExpertsSemanticly, expertVectorTableExists } from '../services/expertVectorUploader';
+import { supabase } from '../services/supabaseClient';
 import ExpertCard from './ExpertCard';
 
 const FindExpert = () => {
@@ -11,13 +14,53 @@ const FindExpert = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isFindingExperts, setIsFindingExperts] = useState(false);
   const [searchingSources, setSearchingSources] = useState([]);
+  const [useSemanticSearch, setUseSemanticSearch] = useState(true);
+  const [totalContacts, setTotalContacts] = useState(0);
+  const [expertVectorAvailable, setExpertVectorAvailable] = useState(false);
+
+  // Load total contacts count and check expert vector availability on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Check if expert vector database is available
+        const expertVectorExists = await expertVectorTableExists();
+        setExpertVectorAvailable(expertVectorExists);
+        
+        if (expertVectorExists) {
+          // If expert vector is available, get count from expert table
+          try {
+            const { count } = await supabase
+              .from('expert_profiles_vector')
+              .select('*', { count: 'exact', head: true });
+            setTotalContacts(count || 0);
+          } catch (error) {
+            console.error('Failed to get expert count:', error);
+            setTotalContacts(0);
+          }
+        } else {
+          // Fall back to contacts table
+          try {
+            const contacts = await getAllContacts({ limit: 1 });
+            const allContacts = await getAllContacts();
+            setTotalContacts(allContacts.length);
+          } catch (error) {
+            console.error('Failed to get contacts count:', error);
+            setTotalContacts(0);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      }
+    };
+    loadData();
+  }, []);
 
   const popularSearches = [
-    'Nuclear safety',
-    'Venture capital funding',
-    'AI and machine learning',
-    'Robotics automation',
-    'Mining operations'
+    'AI researchers',
+    'blockchain experts',
+    'machine learning engineers',
+    'startup founders',
+    'technology consultants'
   ];
 
   const handleSearch = async (e) => {
@@ -27,24 +70,151 @@ const FindExpert = () => {
     setIsSearching(true);
     setHasSearched(true);
 
-    // Simulate AI processing delay
-    setTimeout(() => {
-      const results = searchAllExperts(searchQuery);
+    try {
+      let results = [];
+      
+      if (useSemanticSearch) {
+        try {
+          // Try expert vector search first if available
+          if (expertVectorAvailable) {
+            const expertResults = await searchExpertsSemanticly(searchQuery, {
+              similarityThreshold: 0.6,
+              maxResults: 10,
+              minExpertScore: 1
+            });
+            
+            // Transform expert results to match expected format
+            results = expertResults.map(expert => ({
+              id: expert.id,
+              name: expert.name,
+              title: expert.ld_position || expert.position,
+              company: expert.ld_company || expert.current_company?.name || expert.current_company,
+              location: expert.location,
+              linkedin: null, // Expert profiles don't have direct LinkedIn URLs
+              innovera_contact: 'Expert Profile',
+              industry: expert.industry,
+              avatar: expert.avatar,
+              expert_score: expert.expert_score,
+              scoring_rationale: expert.scoring_rationale,
+              followers: expert.followers,
+              connections: expert.connections,
+              similarity: expert.similarity,
+              isExpert: true,
+              // Ensure expertise is always an array
+              expertise: Array.isArray(expert.industry) ? expert.industry : (expert.industry ? [expert.industry] : []),
+              type: 'Expert Profile',
+              function: 'Expert',
+              availability: 'Unknown',
+              photo: expert.avatar
+            }));
+          } else {
+            // Fall back to contact vector search
+            const vectorResults = await semanticSearch(searchQuery, { matchCount: 10 });
+            results = vectorResults.map(contact => ({
+              ...transformContactToExpert(contact),
+              similarity: contact.similarity
+            }));
+          }
+        } catch (error) {
+          console.warn('Semantic search failed, falling back to text search:', error);
+          // Show detailed error information
+          console.error('Detailed semantic search error:', {
+            message: error.message,
+            stack: error.stack,
+            query: searchQuery
+          });
+          
+          // Fall back to text search
+          const textResults = await searchContacts(searchQuery, { limit: 20 });
+          results = textResults.map(transformContactToExpert);
+        }
+      } else {
+        // Use regular text search
+        const textResults = await searchContacts(searchQuery, { limit: 20 });
+        results = textResults.map(transformContactToExpert);
+      }
+
       setSearchResults(results);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
       setIsSearching(false);
-    }, 800);
+    }
   };
 
-  const handleQuickSearch = (term) => {
+  const handleQuickSearch = async (term) => {
     setSearchQuery(term);
     setIsSearching(true);
     setHasSearched(true);
 
-    setTimeout(() => {
-      const results = searchAllExperts(term);
+    try {
+      let results = [];
+      
+      if (useSemanticSearch) {
+        try {
+          // Try expert vector search first if available
+          if (expertVectorAvailable) {
+            const expertResults = await searchExpertsSemanticly(term, {
+              similarityThreshold: 0.6,
+              maxResults: 10,
+              minExpertScore: 1
+            });
+            
+            // Transform expert results to match expected format
+            results = expertResults.map(expert => ({
+              id: expert.id,
+              name: expert.name,
+              title: expert.ld_position || expert.position,
+              company: expert.ld_company || expert.current_company?.name || expert.current_company,
+              location: expert.location,
+              linkedin: null,
+              innovera_contact: 'Expert Profile',
+              industry: expert.industry,
+              avatar: expert.avatar,
+              expert_score: expert.expert_score,
+              scoring_rationale: expert.scoring_rationale,
+              followers: expert.followers,
+              connections: expert.connections,
+              similarity: expert.similarity,
+              isExpert: true,
+              // Ensure expertise is always an array
+              expertise: Array.isArray(expert.industry) ? expert.industry : (expert.industry ? [expert.industry] : []),
+              type: 'Expert Profile',
+              function: 'Expert',
+              availability: 'Unknown',
+              photo: expert.avatar
+            }));
+          } else {
+            // Fall back to contact vector search
+            const vectorResults = await semanticSearch(term, { matchCount: 10 });
+            results = vectorResults.map(contact => ({
+              ...transformContactToExpert(contact),
+              similarity: contact.similarity
+            }));
+          }
+        } catch (error) {
+          console.warn('Semantic search failed, falling back to text search:', error);
+          console.error('Detailed semantic search error (quick search):', {
+            message: error.message,
+            stack: error.stack,
+            query: term
+          });
+          const textResults = await searchContacts(term, { limit: 20 });
+          results = textResults.map(transformContactToExpert);
+        }
+      } else {
+        const textResults = await searchContacts(term, { limit: 20 });
+        results = textResults.map(transformContactToExpert);
+      }
+
       setSearchResults(results);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
       setIsSearching(false);
-    }, 800);
+    }
   };
 
   // Sources to simulate searching through
@@ -94,8 +264,7 @@ const FindExpert = () => {
     await searchSequence();
   };
 
-  const internalExperts = searchResults.filter(e => e.type === 'Internal');
-  const externalExperts = searchResults.filter(e => e.type === 'External');
+  // All results are now real contacts from Supabase
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -109,9 +278,34 @@ const FindExpert = () => {
               </div>
             </div>
             <h1 className="text-4xl font-bold mb-4">Find Your Perfect Expert</h1>
-            <p className="text-xl text-blue-100 mb-8">
-              Connect with internal experts or discover external specialists for your project
+            <p className="text-xl text-blue-100 mb-4">
+              Search through {totalContacts} {expertVectorAvailable ? 'expert profiles' : 'real contacts'} using AI-powered semantic search
             </p>
+            
+            {/* Search Mode Toggle */}
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <label className="flex items-center gap-2 text-blue-100">
+                <input
+                  type="checkbox"
+                  checked={useSemanticSearch}
+                  onChange={(e) => setUseSemanticSearch(e.target.checked)}
+                  className="rounded"
+                />
+                <Brain className="h-4 w-4" />
+                <span className="text-sm">AI Semantic Search</span>
+                {expertVectorAvailable && (
+                  <span className="text-xs bg-green-500/20 text-green-100 px-2 py-1 rounded-full border border-green-400/30">
+                    Expert DB Ready
+                  </span>
+                )}
+              </label>
+              <span className="text-xs text-blue-200">
+                {useSemanticSearch 
+                  ? (expertVectorAvailable ? 'Search expert profiles by meaning & context' : 'Search by meaning & context')
+                  : 'Search by exact keywords'
+                }
+              </span>
+            </div>
           </div>
 
           {/* Search Box */}
@@ -160,29 +354,29 @@ const FindExpert = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
+      {/* Dynamic Stats Section */}
       {!hasSearched && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Users className="h-8 w-8 text-internal-green mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">Internal Experts</div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow">
+              <Database className="h-8 w-8 text-frank-blue mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">{totalContacts}</div>
+              <div className="text-sm text-gray-600">Total Contacts</div>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Globe className="h-8 w-8 text-external-blue mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">External Experts</div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow">
+              <Brain className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">AI</div>
+              <div className="text-sm text-gray-600">Semantic Search</div>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <div className="text-sm text-gray-600">Industries Covered</div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow">
+              <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">Global</div>
+              <div className="text-sm text-gray-600">Expert Network</div>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <Award className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">20+</div>
-              <div className="text-sm text-gray-600">Years Avg. Experience</div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow">
+              <Search className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900">Smart</div>
+              <div className="text-sm text-gray-600">Context Matching</div>
             </div>
           </div>
         </div>
@@ -223,9 +417,15 @@ const FindExpert = () => {
           ) : (
             <div>
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Found {searchResults.length} expert{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Found {searchResults.length} contact{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {useSemanticSearch ? 'Using AI semantic search' : 'Using keyword search'} 
+                    {searchResults.some(r => r.similarity) && ' • Sorted by relevance'}
+                  </p>
+                </div>
                 <button
                   onClick={() => {
                     setSearchQuery('');
@@ -238,42 +438,39 @@ const FindExpert = () => {
                 </button>
               </div>
 
-              {/* Internal Experts Section */}
-              {internalExperts.length > 0 && (
-                <div className="mb-8">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="bg-internal-green/10 p-2 rounded-lg">
-                      <Users className="h-5 w-5 text-internal-green" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900">Internal Experts</h3>
-                    <span className="px-2 py-1 bg-internal-green/10 text-internal-green text-sm rounded-full">
-                      Existing Relationships
-                    </span>
+              {/* Search Results */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {searchResults.map((expert) => (
+                  <div key={expert.id} className="relative">
+                    <ExpertCard expert={expert} />
+                    {expert.similarity && (
+                      <div className="absolute top-2 right-2">
+                        <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                          {Math.round(expert.similarity * 100)}% match
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {internalExperts.map((expert) => (
-                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* External Experts Section */}
-              {externalExperts.length > 0 && (
-                <div>
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="bg-external-blue/10 p-2 rounded-lg">
-                      <Globe className="h-5 w-5 text-external-blue" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900">External Experts</h3>
-                    <span className="px-2 py-1 bg-external-blue/10 text-external-blue text-sm rounded-full">
-                      New Connections
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {externalExperts.map((expert) => (
-                      <ExpertCard key={expert.id} expert={expert} variant="compact" />
-                    ))}
+                ))}
+              </div>
+              
+              {/* AI Expert Generation Section */}
+              {searchResults.length < 5 && (
+                <div className="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
+                  <div className="text-center">
+                    <Sparkles className="h-8 w-8 text-purple-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Need more experts?</h3>
+                    <p className="text-gray-600 mb-4">
+                      Let Frank generate additional expert profiles based on your search query
+                    </p>
+                    <button
+                      onClick={handleFindExpert}
+                      disabled={isFindingExperts}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all flex items-center space-x-2 mx-auto"
+                    >
+                      <Sparkles className="h-5 w-5" />
+                      <span>{isFindingExperts ? 'Generating...' : 'Generate AI Experts'}</span>
+                    </button>
                   </div>
                 </div>
               )}

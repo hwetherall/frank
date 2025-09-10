@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Database, User, Briefcase, ChevronRight } from 'lucide-react';
+import { Search, Database, User, Briefcase, ChevronRight, Upload, Brain, Award, Zap } from 'lucide-react';
 
 const Navigation = () => {
   const location = useLocation();
@@ -53,6 +53,54 @@ const Navigation = () => {
                 <span>View Database</span>
               </Link>
               
+              <Link
+                to="/upload"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${
+                  isActive('/upload')
+                    ? 'bg-white/20 text-white'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Upload className="h-4 w-4" />
+                <span>Upload Excel</span>
+              </Link>
+              
+              <Link
+                to="/vector"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${
+                  isActive('/vector')
+                    ? 'bg-white/20 text-white'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Brain className="h-4 w-4" />
+                <span>Vector DB</span>
+              </Link>
+              
+              <Link
+                to="/expert-scorer"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${
+                  isActive('/expert-scorer')
+                    ? 'bg-white/20 text-white'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Award className="h-4 w-4" />
+                <span>Expert-Scorer</span>
+              </Link>
+              
+              <Link
+                to="/expert-vector"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${
+                  isActive('/expert-vector')
+                    ? 'bg-white/20 text-white'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Zap className="h-4 w-4" />
+                <span>Expert Vector</span>
+              </Link>
+              
               {location.pathname.startsWith('/expert/') && (
                 <div className="px-3 py-2 rounded-md text-sm font-medium bg-white/20 text-white flex items-center space-x-2">
                   <User className="h-4 w-4" />
@@ -78,7 +126,7 @@ const Navigation = () => {
       </div>
 
       {/* Breadcrumb for nested routes */}
-      {location.pathname !== '/' && location.pathname !== '/database' && (
+      {location.pathname !== '/' && location.pathname !== '/database' && location.pathname !== '/upload' && location.pathname !== '/vector' && location.pathname !== '/expert-scorer' && location.pathname !== '/expert-vector' && (
         <div className="bg-white/10 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center space-x-2 text-sm text-blue-100">

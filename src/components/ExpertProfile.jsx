@@ -1,26 +1,246 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Edit2, Mail, Phone, MapPin, Building2, 
   Briefcase, Calendar, Award, FileText, Paperclip, 
   MessageSquare, Clock, CheckCircle, AlertCircle,
-  Download, Share2, Star, Globe, Users, BookOpen, User
+  Download, Share2, Star, Globe, Users, BookOpen, User, Loader,
+  X, Plus, Save
 } from 'lucide-react';
-import { getExpertByIdFromAll } from '../data/mockExperts';
+import { getContactById, transformContactToExpert } from '../services/contactsService';
+import { getExpertById } from '../services/expertVectorUploader';
 import StarRating from './StarRating';
 
 const ExpertProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const expert = getExpertByIdFromAll(id);
+  const [expert, setExpert] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Notes state
+  const [notes, setNotes] = useState([]);
+  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
+  const [newNote, setNewNote] = useState({ title: '', content: '', priority: 'normal' });
 
-  if (!expert) {
+  useEffect(() => {
+    const loadExpert = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to get expert from expert profiles vector first
+        let expertData;
+        try {
+          const expertProfile = await getExpertById(id);
+          
+          // Transform expert profile to match expected format
+            expertData = {
+            id: expertProfile.id,
+            name: expertProfile.name,
+            title: expertProfile.ld_position || expertProfile.position,
+            company: expertProfile.ld_company || (expertProfile.current_company?.name || expertProfile.current_company),
+            location: expertProfile.location,
+            linkedin: null,
+            email: null,
+            phone: null,
+            industry: Array.isArray(expertProfile.industry) ? expertProfile.industry.join(', ') : (expertProfile.industry || ''),
+            industries: Array.isArray(expertProfile.industry) ? expertProfile.industry : [],
+            avatar: expertProfile.avatar,
+            expert_score: expertProfile.expert_score,
+            scoring_rationale: expertProfile.scoring_rationale,
+            followers: expertProfile.followers,
+            connections: expertProfile.connections,
+            posts_count: expertProfile.posts_count,
+            activity_count: expertProfile.activity_count,
+            type: 'Expert Profile',
+            lead: 'Expert Database',
+            expertise: Array.isArray(expertProfile.industry) ? expertProfile.industry : [],
+            function: 'Expert',
+            bio: expertProfile.searchable_text || `${expertProfile.name} is a professional expert.`,
+            availability: 'Unknown',
+            yearsExperience: null,
+            certifications: [],
+            rating: null,
+            reviewCount: 0,
+            photo: expertProfile.avatar,
+            created_at: expertProfile.created_at,
+            updated_at: expertProfile.updated_at,
+            notes: `Expert Score: ${expertProfile.expert_score}/5. ${expertProfile.scoring_rationale || 'Professional expert in our database.'}`,
+            // Additional rich data for enhanced display
+            fullLocation: expertProfile.location || 'Location not specified',
+            companyDetails: expertProfile.current_company,
+            rawCompanyData: expertProfile.ld_company,
+            fullBio: expertProfile.about || expertProfile.searchable_text,
+            experience: expertProfile.experience,
+            education: expertProfile.educations_details,
+            certificationDetails: expertProfile.certifications,
+            publications: expertProfile.publications,
+            honors: expertProfile.honors_and_awards
+          };
+        } catch (expertError) {
+          console.warn('Expert not found in expert profiles, trying contacts:', expertError);
+          // Fall back to contacts table
+          const contact = await getContactById(id);
+          expertData = transformContactToExpert(contact);
+        }
+        
+        setExpert(expertData);
+        setError(null);
+        
+        // Load comprehensive notes
+        const existingNotes = [];
+        
+        // Expert Assessment Note
+        if (expertData.expert_score && expertData.scoring_rationale) {
+          existingNotes.push({
+            id: 1,
+            title: 'Expert Assessment',
+            content: `Expert Score: ${expertData.expert_score}/5\n\nAssessment: ${expertData.scoring_rationale}\n\nScored using: ${expertProfile.scoring_model || 'AI Assessment'}\nScored on: ${expertProfile.scored_at ? new Date(expertProfile.scored_at).toLocaleDateString() : 'Recent'}`,
+            priority: 'high',
+            createdAt: expertProfile.scored_at || new Date().toISOString(),
+            createdBy: 'AI Expert Scorer'
+          });
+        }
+
+        // Professional Background Note
+        if (expertData.fullBio && expertData.fullBio.length > 100) {
+          existingNotes.push({
+            id: 2,
+            title: 'Professional Background',
+            content: expertData.fullBio,
+            priority: 'normal',
+            createdAt: expertData.created_at || new Date().toISOString(),
+            createdBy: 'LinkedIn Profile'
+          });
+        }
+
+        // Network & Activity Note
+        if (expertData.followers || expertData.connections) {
+          const networkInfo = [];
+          if (expertData.followers) networkInfo.push(`${expertData.followers.toLocaleString()} LinkedIn followers`);
+          if (expertData.connections) networkInfo.push(`${expertData.connections.toLocaleString()} connections`);
+          if (expertData.posts_count) networkInfo.push(`${expertData.posts_count} posts`);
+          if (expertData.activity_count) networkInfo.push(`${expertData.activity_count} recent activities`);
+          
+          existingNotes.push({
+            id: 3,
+            title: 'Professional Network & Activity',
+            content: `LinkedIn Metrics:\n• ${networkInfo.join('\n• ')}\n\nThis indicates ${expertData.followers > 1000 ? 'strong' : 'moderate'} professional visibility and engagement in their field.`,
+            priority: 'normal',
+            createdAt: expertData.updated_at || new Date().toISOString(),
+            createdBy: 'LinkedIn Data'
+          });
+        }
+
+        // Experience & Education Note  
+        if (expertProfile.experience || expertProfile.educations_details) {
+          let experienceContent = '';
+          if (expertProfile.experience) {
+            experienceContent += `Professional Experience:\n${typeof expertProfile.experience === 'string' ? expertProfile.experience : JSON.stringify(expertProfile.experience, null, 2)}\n\n`;
+          }
+          if (expertProfile.educations_details) {
+            experienceContent += `Education:\n${typeof expertProfile.educations_details === 'string' ? expertProfile.educations_details : JSON.stringify(expertProfile.educations_details, null, 2)}`;
+          }
+          
+          if (experienceContent.trim()) {
+            existingNotes.push({
+              id: 4,
+              title: 'Experience & Education',
+              content: experienceContent,
+              priority: 'normal',
+              createdAt: expertData.created_at || new Date().toISOString(),
+              createdBy: 'Profile Data'
+            });
+          }
+        }
+
+        // Default note if no specific notes
+        if (existingNotes.length === 0) {
+          existingNotes.push({
+            id: 1,
+            title: 'Expert Profile',
+            content: expertData.notes || 'Professional expert in our database',
+            priority: 'normal',
+            createdAt: expertData.created_at || new Date().toISOString(),
+            createdBy: expertData.lead || 'Expert Database'
+          });
+        }
+
+        setNotes(existingNotes);
+        
+      } catch (err) {
+        setError(err.message);
+        console.error('Failed to load contact:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExpert();
+  }, [id]);
+
+  // Notes functionality
+  const handleAddNote = () => {
+    if (!newNote.title.trim() || !newNote.content.trim()) return;
+    
+    const note = {
+      id: Date.now(),
+      title: newNote.title.trim(),
+      content: newNote.content.trim(),
+      priority: newNote.priority,
+      createdAt: new Date().toISOString(),
+      createdBy: expert?.lead || 'Current User'
+    };
+    
+    setNotes(prev => [note, ...prev]);
+    setNewNote({ title: '', content: '', priority: 'normal' });
+    setShowAddNoteModal(false);
+  };
+
+  const handleDeleteNote = (noteId) => {
+    setNotes(prev => prev.filter(note => note.id !== noteId));
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high':
+        return 'border-red-200 bg-red-50';
+      case 'medium':
+        return 'border-yellow-200 bg-yellow-50';
+      default:
+        return 'border-blue-200 bg-blue-50';
+    }
+  };
+
+  const getPriorityBadge = (priority) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Expert not found</h2>
-          <p className="text-gray-600 mb-4">The expert you're looking for doesn't exist.</p>
+          <Loader className="w-8 h-8 animate-spin text-frank-blue mx-auto mb-4" />
+          <p className="text-gray-600">Loading contact...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !expert) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Contact not found</h2>
+          <p className="text-gray-600 mb-4">{error || "The contact you're looking for doesn't exist."}</p>
           <Link to="/database" className="text-frank-blue hover:underline">
             Return to Database
           </Link>
@@ -182,8 +402,69 @@ const ExpertProfile = () => {
             <div className="lg:col-span-2 space-y-8">
               {/* Bio */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Biography</h2>
-                <p className="text-gray-700 leading-relaxed">{expert.bio}</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Professional Profile</h2>
+                <div className="space-y-4">
+                  {/* Full Biography */}
+                  {expert.fullBio && expert.fullBio !== expert.bio && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">About</h4>
+                      <p className="text-gray-700 leading-relaxed">{expert.fullBio}</p>
+                    </div>
+                  )}
+                  
+                  {/* Professional Summary */}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Professional Summary</h4>
+                    <p className="text-gray-700 leading-relaxed">{expert.bio}</p>
+                  </div>
+                  
+                  {/* Expert Score and Rationale */}
+                  {expert.expert_score && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-blue-900">Expert Assessment</h4>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-blue-600">Score:</span>
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <span
+                                key={i}
+                                className={`text-sm ${i < expert.expert_score ? 'text-yellow-400' : 'text-gray-300'}`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                            <span className="text-sm text-blue-700 ml-1 font-semibold">({expert.expert_score}/5)</span>
+                          </div>
+                        </div>
+                      </div>
+                      {expert.scoring_rationale && (
+                        <p className="text-blue-800 text-sm leading-relaxed">{expert.scoring_rationale}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* LinkedIn Metrics */}
+                  {(expert.followers || expert.connections) && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-gray-900 mb-3">Professional Network</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        {expert.followers && (
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{expert.followers.toLocaleString()}</div>
+                            <div className="text-sm text-gray-600">Followers</div>
+                          </div>
+                        )}
+                        {expert.connections && (
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">{expert.connections.toLocaleString()}</div>
+                            <div className="text-sm text-gray-600">Connections</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Contact Information */}
@@ -243,45 +524,175 @@ const ExpertProfile = () => {
             <div className="space-y-8">
               {/* Quick Stats */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Experience</span>
-                    <span className="font-semibold">{expert.yearsExperience} years</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Expertise Areas</span>
-                    <span className="font-semibold">{expert.expertise.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Type</span>
-                    <span className="font-semibold">{expert.type}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Industry</span>
-                    <span className="font-semibold">{expert.industry}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Function</span>
-                    <span className="font-semibold">{expert.function}</span>
-                  </div>
-                  {expert.lead && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Lead</span>
-                      <span className="font-semibold">{expert.lead}</span>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Expert Overview</h3>
+                <div className="space-y-4">
+                  
+                  {/* Expert Score - Most Important */}
+                  {expert.expert_score && (
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-700">Expert Score</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <span
+                                key={i}
+                                className={`text-lg ${i < expert.expert_score ? 'text-yellow-400' : 'text-gray-300'}`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <span className="font-bold text-blue-700">({expert.expert_score}/5)</span>
+                        </div>
+                      </div>
                     </div>
                   )}
-                  {expert.rating && (
+
+                  {/* Key Stats */}
+                  <div className="space-y-3">
+                    {expert.yearsExperience && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Experience</span>
+                        <span className="font-semibold text-gray-900">{expert.yearsExperience} years</span>
+                      </div>
+                    )}
+                    
+                    {expert.expertise && expert.expertise.length > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Expertise Areas</span>
+                        <span className="font-semibold text-gray-900">{expert.expertise.length}</span>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Rating</span>
-                      <div className="flex items-center space-x-1">
-                        <StarRating 
-                          rating={expert.rating} 
-                          reviewCount={0}
-                          size="sm"
-                          interactive={false}
-                          showReviewCount={false}
-                        />
+                      <span className="text-sm text-gray-600">Type</span>
+                      <span className={`font-semibold px-2 py-1 rounded-full text-xs ${
+                        expert.type === 'Expert Profile' 
+                          ? 'bg-purple-100 text-purple-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {expert.type}
+                      </span>
+                    </div>
+                    
+                    {expert.fullLocation && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm text-gray-600">Location</span>
+                        <span className="font-semibold text-gray-900 text-right">
+                          {expert.fullLocation}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {expert.industry && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm text-gray-600">Industry</span>
+                        <span className="font-semibold text-gray-900 text-right max-w-32 truncate" title={expert.industry}>
+                          {expert.industry}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {expert.function && expert.function !== 'Unknown' && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Function</span>
+                        <span className="font-semibold text-gray-900">{expert.function}</span>
+                      </div>
+                    )}
+                    
+                    {expert.lead && expert.lead !== 'Unknown' && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Lead</span>
+                        <span className="font-semibold text-gray-900">{expert.lead}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Activity Metrics */}
+                  {(expert.posts_count || expert.activity_count) && (
+                    <div className="border-t border-gray-200 pt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Activity</h4>
+                      <div className="space-y-2">
+                        {expert.posts_count > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500">Posts</span>
+                            <span className="text-sm font-semibold text-gray-900">{expert.posts_count}</span>
+                          </div>
+                        )}
+                        {expert.activity_count > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500">Activities</span>
+                            <span className="text-sm font-semibold text-gray-900">{expert.activity_count}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Legacy Rating (if available) */}
+                  {expert.rating && (
+                    <div className="border-t border-gray-200 pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">User Rating</span>
+                        <div className="flex items-center space-x-1">
+                          <StarRating 
+                            rating={expert.rating} 
+                            reviewCount={0}
+                            size="sm"
+                            interactive={false}
+                            showReviewCount={false}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Company Information */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Information</h3>
+                <div className="space-y-4">
+                  {expert.company && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 text-lg">{expert.company}</h4>
+                      {expert.title && (
+                        <p className="text-sm text-gray-600 mt-1">{expert.title}</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Company enrichment suggestions */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <h5 className="text-sm font-medium text-blue-900 mb-2">💡 Company Intelligence</h5>
+                    <div className="text-xs text-blue-800 space-y-1">
+                      <p>• Company size and industry details</p>
+                      <p>• Recent news and developments</p>
+                      <p>• Key executives and leadership</p>
+                      <p>• Financial information and funding</p>
+                    </div>
+                    <div className="mt-2 flex space-x-2">
+                      <button className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors">
+                        Enrich with Clearbit
+                      </button>
+                      <button className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors">
+                        LinkedIn Company
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Show any available company data */}
+                  {expert.companyDetails && typeof expert.companyDetails === 'object' && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <h5 className="text-sm font-medium text-gray-900 mb-2">Available Data</h5>
+                      <div className="text-xs text-gray-700 space-y-1">
+                        {Object.entries(expert.companyDetails).map(([key, value]) => (
+                          <div key={key} className="flex justify-between">
+                            <span className="capitalize">{key.replace('_', ' ')}:</span>
+                            <span className="font-medium">{String(value).substring(0, 30)}...</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -324,20 +735,54 @@ const ExpertProfile = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
-              <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
-                <MessageSquare className="h-4 w-4" />
+              <button 
+                onClick={() => setShowAddNoteModal(true)}
+                className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
                 <span>Add Note</span>
               </button>
             </div>
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-              <div className="flex items-start space-x-3">
-                <FileText className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="text-gray-700">{expert.notes}</p>
-                  <p className="text-sm text-gray-500 mt-2">Last updated: {new Date(expert.lastContact).toLocaleDateString()}</p>
-                </div>
+            
+            {notes.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No notes yet</p>
+                <p className="text-sm text-gray-400 mt-2">Add your first note to keep track of interactions</p>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                {notes.map((note) => (
+                  <div key={note.id} className={`border rounded-lg p-4 ${getPriorityColor(note.priority)}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-semibold text-gray-900">{note.title}</h3>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityBadge(note.priority)}`}>
+                          {note.priority}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteNote(note.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <p className="text-gray-700 mb-3">{note.content}</p>
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <span>By {note.createdBy}</span>
+                      <span>{new Date(note.createdAt).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -394,6 +839,83 @@ const ExpertProfile = () => {
           </div>
         )}
       </div>
+
+      {/* Add Note Modal */}
+      {showAddNoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Add New Note</h3>
+              <button
+                onClick={() => setShowAddNoteModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={newNote.title}
+                  onChange={(e) => setNewNote(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter note title..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Priority
+                </label>
+                <select
+                  value={newNote.priority}
+                  onChange={(e) => setNewNote(prev => ({ ...prev, priority: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Content
+                </label>
+                <textarea
+                  value={newNote.content}
+                  onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="Enter your note here..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowAddNoteModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddNote}
+                disabled={!newNote.title.trim() || !newNote.content.trim()}
+                className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                <Save className="h-4 w-4" />
+                <span>Save Note</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

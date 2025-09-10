@@ -1,51 +1,96 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, Filter, ChevronDown, MapPin, Building2, 
   Briefcase, CheckCircle, AlertCircle, 
-  Clock, Download, RefreshCw, User 
+  Clock, Download, RefreshCw, User, Users, Loader 
 } from 'lucide-react';
-import { mockExperts } from '../data/mockExperts';
+import { getAllContacts, searchContacts, transformContactToExpert, getContactStats } from '../services/contactsService';
 import StarRating from './StarRating';
 
 const ViewDatabase = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState('all');
   const [industryFilter, setIndustryFilter] = useState('all');
-  const [functionFilter, setFunctionFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(true);
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState(null);
+
+  // Load contacts on component mount
+  useEffect(() => {
+    loadContacts();
+    loadStats();
+  }, []);
+
+  const loadContacts = async () => {
+    try {
+      setLoading(true);
+      const contactsData = await getAllContacts({ limit: 1000 });
+      setContacts(contactsData);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Failed to load contacts:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const statsData = await getContactStats();
+      setStats(statsData);
+    } catch (err) {
+      console.error('Failed to load stats:', err);
+    }
+  };
+
+  // Transform contacts to expert format for compatibility
+  const experts = useMemo(() => {
+    return contacts.map(transformContactToExpert);
+  }, [contacts]);
 
   // Extract unique values for filters
-  const locations = [...new Set(mockExperts.map(e => e.location))].sort();
-  const industries = [...new Set(mockExperts.map(e => e.industry))].sort();
-  const functions = [...new Set(mockExperts.map(e => e.function))].sort();
-
-  // Filter experts based on all criteria
-  const filteredExperts = useMemo(() => {
-    return mockExperts.filter(expert => {
-      const matchesSearch = searchTerm === '' || 
-        expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expert.expertise.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        expert.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expert.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (expert.lead && expert.lead.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const matchesLocation = locationFilter === 'all' || expert.location === locationFilter;
-      const matchesIndustry = industryFilter === 'all' || expert.industry === industryFilter;
-      const matchesFunction = functionFilter === 'all' || expert.function === functionFilter;
-      const matchesType = typeFilter === 'all' || expert.type === typeFilter;
-
-      return matchesSearch && matchesLocation && matchesIndustry && matchesFunction && matchesType;
+  const industries = useMemo(() => {
+    const allIndustries = new Set();
+    contacts.forEach(contact => {
+      if (Array.isArray(contact.industry)) {
+        contact.industry.forEach(ind => allIndustries.add(ind));
+      } else if (contact.industry) {
+        allIndustries.add(contact.industry);
+      }
     });
-  }, [searchTerm, locationFilter, industryFilter, functionFilter, typeFilter]);
+    return [...allIndustries].sort();
+  }, [contacts]);
+
+  // Filter experts based on criteria
+  const filteredExperts = useMemo(() => {
+    if (searchTerm.trim()) {
+      // If there's a search term, don't apply other filters to keep it simple
+      return experts.filter(expert => {
+        const searchLower = searchTerm.toLowerCase();
+        return expert.name.toLowerCase().includes(searchLower) ||
+               expert.company.toLowerCase().includes(searchLower) ||
+               expert.title.toLowerCase().includes(searchLower) ||
+               expert.industry.toLowerCase().includes(searchLower) ||
+               expert.lead.toLowerCase().includes(searchLower);
+      });
+    }
+
+    return experts.filter(expert => {
+      const matchesIndustry = industryFilter === 'all' || 
+        (Array.isArray(expert.industries) ? 
+          expert.industries.some(ind => ind === industryFilter) : 
+          expert.industry.includes(industryFilter));
+
+      return matchesIndustry;
+    });
+  }, [experts, searchTerm, industryFilter]);
 
   const resetFilters = () => {
     setSearchTerm('');
-    setLocationFilter('all');
     setIndustryFilter('all');
-    setFunctionFilter('all');
-    setTypeFilter('all');
   };
 
   const getAvailabilityIcon = (availability) => {
@@ -60,22 +105,53 @@ const ViewDatabase = () => {
   };
 
   const activeFiltersCount = [
-    locationFilter !== 'all',
-    industryFilter !== 'all',
-    functionFilter !== 'all',
-    typeFilter !== 'all'
+    industryFilter !== 'all'
   ].filter(Boolean).length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin text-frank-blue mx-auto mb-4" />
+          <p className="text-gray-600">Loading contacts from Supabase...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Contacts</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={loadContacts}
+            className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Expert Database</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Contact Database</h1>
               <p className="mt-1 text-sm text-gray-600">
-                Browse and manage all {mockExperts.length} experts in the system
+                Browse and manage all {contacts.length} contacts from Supabase
+                {stats && (
+                  <span className="ml-2 text-gray-500">
+                    • {stats.uniqueIndustries} industries • {stats.uniqueCompanies} companies
+                  </span>
+                )}
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex space-x-3">
@@ -83,9 +159,12 @@ const ViewDatabase = () => {
                 <Download className="h-4 w-4" />
                 <span>Export</span>
               </button>
-              <button className="px-4 py-2 bg-white text-frank-blue border border-frank-blue rounded-lg hover:bg-frank-light-gray transition-colors flex items-center space-x-2">
+              <button 
+                onClick={loadContacts}
+                className="px-4 py-2 bg-white text-frank-blue border border-frank-blue rounded-lg hover:bg-frank-light-gray transition-colors flex items-center space-x-2"
+              >
                 <RefreshCw className="h-4 w-4" />
-                <span>Sync</span>
+                <span>Refresh</span>
               </button>
             </div>
           </div>
@@ -97,7 +176,7 @@ const ViewDatabase = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, expertise, location, industry, or lead..."
+              placeholder="Search by name, company, title, industry, or lead..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent"
             />
           </div>
@@ -106,7 +185,7 @@ const ViewDatabase = () => {
 
       {/* Filters Section */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -133,21 +212,7 @@ const ViewDatabase = () => {
           </div>
 
           {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                <select
-                  value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
-                >
-                  <option value="all">All Locations</option>
-                  {locations.map(loc => (
-                    <option key={loc} value={loc}>{loc}</option>
-                  ))}
-                </select>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
                 <select
@@ -161,32 +226,14 @@ const ViewDatabase = () => {
                   ))}
                 </select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Function</label>
-                <select
-                  value={functionFilter}
-                  onChange={(e) => setFunctionFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
+              <div className="flex items-end">
+                <button
+                  onClick={loadContacts}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2"
                 >
-                  <option value="all">All Functions</option>
-                  {functions.map(func => (
-                    <option key={func} value={func}>{func}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Expert Type</label>
-                <select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue"
-                >
-                  <option value="all">All Types</option>
-                  <option value="Internal">Internal Only</option>
-                  <option value="External">External Only</option>
-                </select>
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Refresh Data</span>
+                </button>
               </div>
             </div>
           )}
@@ -194,109 +241,123 @@ const ViewDatabase = () => {
       </div>
 
       {/* Results Count */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
         <p className="text-sm text-gray-600">
           Showing <span className="font-semibold">{filteredExperts.length}</span> of{' '}
-          <span className="font-semibold">{mockExperts.length}</span> experts
+          <span className="font-semibold">{contacts.length}</span> contacts
         </p>
       </div>
 
       {/* Table */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pb-12">
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="w-full table-fixed divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Expert
+                  <th className="w-1/5 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
+                  <th className="w-1/6 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Company
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/5 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Title
+                  </th>
+                  <th className="w-1/4 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Industry
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Function
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-16 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Lead
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rating
+                  <th className="w-20 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    LinkedIn
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                  <th className="w-20 px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Added
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredExperts.map((expert) => (
                   <tr key={expert.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-3">
                       <div className="flex items-center">
-                        <img
-                          className="h-10 w-10 rounded-full"
-                          src={expert.photo}
-                          alt={expert.name}
-                        />
-                        <div className="ml-4">
+                        <div className="h-8 w-8 rounded-full bg-frank-blue flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-medium text-xs">
+                            {expert.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                          </span>
+                        </div>
+                        <div className="ml-3 min-w-0 flex-1">
                           <Link
                             to={`/expert/${expert.id}`}
-                            className="text-sm font-medium text-frank-blue hover:text-frank-blue/80 transition-colors"
+                            className="text-sm font-medium text-frank-blue hover:text-frank-blue/80 transition-colors block truncate"
+                            title={expert.name}
                           >
                             {expert.name}
                           </Link>
-                          <div className="text-sm text-gray-500">{expert.email}</div>
+                          <div className="text-xs text-gray-500">ID: {expert.id}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <MapPin className="h-3 w-3 mr-1 text-gray-400" />
-                        {expert.location}
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-900 truncate" title={expert.company}>
+                        <Building2 className="h-3 w-3 inline mr-1 text-gray-400" />
+                        {expert.company}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <Building2 className="h-3 w-3 mr-1 text-gray-400" />
-                        {expert.industry}
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-900 truncate" title={expert.title}>
+                        <Briefcase className="h-3 w-3 inline mr-1 text-gray-400" />
+                        {expert.title}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <Briefcase className="h-3 w-3 mr-1 text-gray-400" />
-                        {expert.function}
+                    <td className="px-3 py-3">
+                      <div className="text-sm text-gray-900">
+                        {Array.isArray(expert.industries) ? (
+                          <div className="flex flex-wrap gap-1">
+                            {expert.industries.map((industry, idx) => (
+                              <span key={idx} className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full whitespace-nowrap">
+                                {industry}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full whitespace-nowrap">
+                            {expert.industry}
+                          </span>
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {expert.lead ? (
-                        <div className="flex items-center text-sm text-gray-900">
-                          <User className="h-3 w-3 mr-1 text-gray-400" />
+                    <td className="px-2 py-3">
+                      {expert.lead && expert.lead !== 'Unknown' ? (
+                        <div className="text-xs text-gray-900 truncate" title={expert.lead}>
                           {expert.lead}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">-</span>
+                        <span className="text-xs text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {expert.rating ? (
-                        <StarRating 
-                          rating={expert.rating} 
-                          reviewCount={expert.reviewCount}
-                          size="sm"
-                          interactive={false}
-                          showReviewCount={false}
-                        />
+                    <td className="px-2 py-3">
+                      {expert.linkedin ? (
+                        <a
+                          href={expert.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-frank-blue hover:text-frank-blue/80 text-xs"
+                        >
+                          View
+                        </a>
                       ) : (
-                        <span className="text-sm text-gray-400">No rating</span>
+                        <span className="text-xs text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm">
-                        {getAvailabilityIcon(expert.availability)}
-                        <span className="ml-1 text-gray-900">{expert.availability}</span>
+                    <td className="px-2 py-3">
+                      <div className="text-xs text-gray-500">
+                        {expert.lastContact ? new Date(expert.lastContact).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        }) : '-'}
                       </div>
                     </td>
                   </tr>
@@ -305,16 +366,24 @@ const ViewDatabase = () => {
             </table>
           </div>
 
-          {filteredExperts.length === 0 && (
+          {filteredExperts.length === 0 && contacts.length > 0 && (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No experts found matching your criteria</p>
+              <p className="text-gray-500">No contacts found matching your criteria</p>
               <button
                 onClick={resetFilters}
                 className="mt-4 px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
               >
                 Clear Filters
               </button>
+            </div>
+          )}
+          
+          {contacts.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No contacts found in database</p>
+              <p className="text-sm text-gray-400 mt-2">Upload some contacts to get started!</p>
             </div>
           )}
         </div>
