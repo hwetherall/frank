@@ -31,8 +31,9 @@ const ExpertProfile = () => {
         
         // Try to get expert from expert profiles vector first
         let expertData;
+        let expertProfile = null;
         try {
-          const expertProfile = await getExpertById(id);
+          expertProfile = await getExpertById(id);
           
           // Transform expert profile to match expected format
             expertData = {
@@ -96,9 +97,9 @@ const ExpertProfile = () => {
           existingNotes.push({
             id: 1,
             title: 'Expert Assessment',
-            content: `Expert Score: ${expertData.expert_score}/5\n\nAssessment: ${expertData.scoring_rationale}\n\nScored using: ${expertProfile.scoring_model || 'AI Assessment'}\nScored on: ${expertProfile.scored_at ? new Date(expertProfile.scored_at).toLocaleDateString() : 'Recent'}`,
+            content: `Expert Score: ${expertData.expert_score}/5\n\nAssessment: ${expertData.scoring_rationale}\n\nScored using: ${expertProfile?.scoring_model || 'AI Assessment'}\nScored on: ${expertProfile?.scored_at ? new Date(expertProfile.scored_at).toLocaleDateString() : 'Recent'}`,
             priority: 'high',
-            createdAt: expertProfile.scored_at || new Date().toISOString(),
+            createdAt: expertProfile?.scored_at || new Date().toISOString(),
             createdBy: 'AI Expert Scorer'
           });
         }
@@ -134,7 +135,7 @@ const ExpertProfile = () => {
         }
 
         // Experience & Education Note  
-        if (expertProfile.experience || expertProfile.educations_details) {
+        if (expertProfile?.experience || expertProfile?.educations_details) {
           let experienceContent = '';
           if (expertProfile.experience) {
             experienceContent += `Professional Experience:\n${typeof expertProfile.experience === 'string' ? expertProfile.experience : JSON.stringify(expertProfile.experience, null, 2)}\n\n`;
@@ -222,6 +223,122 @@ const ExpertProfile = () => {
       default:
         return 'bg-blue-100 text-blue-800';
     }
+  };
+
+  // Function to parse and format professional summary
+  const formatProfessionalSummary = (bio) => {
+    if (!bio || typeof bio !== 'string') return null;
+    
+    const sections = [];
+    
+    // Split by common delimiters and clean up
+    const sentences = bio.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    
+    // Try to identify different sections based on keywords
+    const profileInfo = [];
+    const experience = [];
+    const expertise = [];
+    const achievements = [];
+    const other = [];
+    
+    sentences.forEach(sentence => {
+      const cleanSentence = sentence.trim();
+      if (!cleanSentence) return;
+      
+      const lowerSentence = cleanSentence.toLowerCase();
+      
+      // Skip meaningless lines like "Innovation consulting expert profile: Expert: Peter B"
+      if (lowerSentence.includes('consulting expert profile: expert:') || 
+          lowerSentence.includes('expert profile: expert:')) {
+        return;
+      }
+      
+      // Profile/Position information
+      if (lowerSentence.includes('expert:') || lowerSentence.includes('position:') || 
+          lowerSentence.includes('company:') || lowerSentence.includes('location:')) {
+        profileInfo.push(cleanSentence);
+      }
+      // Experience and background
+      else if (lowerSentence.includes('experience:') || lowerSentence.includes('ceo') || 
+               lowerSentence.includes('founder') || lowerSentence.includes('led') ||
+               lowerSentence.includes('tenure') || lowerSentence.includes('years')) {
+        experience.push(cleanSentence);
+      }
+      // Skills and expertise
+      else if (lowerSentence.includes('expertise:') || lowerSentence.includes('machine learning') ||
+               lowerSentence.includes('ai') || lowerSentence.includes('technology') ||
+               lowerSentence.includes('skills') || lowerSentence.includes('specializ')) {
+        expertise.push(cleanSentence);
+      }
+      // Achievements and metrics
+      else if (lowerSentence.includes('score:') || lowerSentence.includes('outcomes') ||
+               lowerSentence.includes('successful') || lowerSentence.includes('created') ||
+               lowerSentence.includes('figure') || /\d+/.test(cleanSentence)) {
+        achievements.push(cleanSentence);
+      }
+      // Everything else
+      else {
+        other.push(cleanSentence);
+      }
+    });
+    
+    // Function to format text with bold labels
+    const formatTextWithBoldLabels = (text) => {
+      // Common patterns to bold
+      const patterns = [
+        /^(Position|Company|Location|Experience|Industries|Related Expertise|Market Knowledge|About|Network|Regional Expertise|Company Context):\s*/i
+      ];
+      
+      let formattedText = text;
+      patterns.forEach(pattern => {
+        formattedText = formattedText.replace(pattern, (match) => `**${match.trim()}** `);
+      });
+      
+      return formattedText;
+    };
+    
+    // Build structured sections with formatted content
+    if (profileInfo.length > 0) {
+      sections.push({
+        title: 'Profile Overview',
+        content: profileInfo.map(formatTextWithBoldLabels),
+        icon: '👤'
+      });
+    }
+    
+    if (experience.length > 0) {
+      sections.push({
+        title: 'Professional Experience',
+        content: experience.map(formatTextWithBoldLabels),
+        icon: '💼'
+      });
+    }
+    
+    if (expertise.length > 0) {
+      sections.push({
+        title: 'Areas of Expertise',
+        content: expertise.map(formatTextWithBoldLabels),
+        icon: '🎯'
+      });
+    }
+    
+    if (achievements.length > 0) {
+      sections.push({
+        title: 'Key Achievements',
+        content: achievements.map(formatTextWithBoldLabels),
+        icon: '🏆'
+      });
+    }
+    
+    if (other.length > 0) {
+      sections.push({
+        title: 'Additional Information',
+        content: other.map(formatTextWithBoldLabels),
+        icon: '📋'
+      });
+    }
+    
+    return sections;
   };
 
   if (loading) {
@@ -414,8 +531,50 @@ const ExpertProfile = () => {
                   
                   {/* Professional Summary */}
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Professional Summary</h4>
-                    <p className="text-gray-700 leading-relaxed">{expert.bio}</p>
+                    <h4 className="font-semibold text-gray-900 mb-4">Professional Summary</h4>
+                    {(() => {
+                      const formattedSections = formatProfessionalSummary(expert.bio);
+                      
+                      if (formattedSections && formattedSections.length > 0) {
+                        return (
+                          <div className="space-y-4">
+                            {formattedSections.map((section, index) => (
+                              <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <div className="flex items-center space-x-2 mb-3">
+                                  <span className="text-lg">{section.icon}</span>
+                                  <h5 className="font-medium text-gray-900">{section.title}</h5>
+                                </div>
+                                <div className="space-y-2">
+                                  {section.content.map((item, itemIndex) => {
+                                    const text = item.endsWith('.') ? item : item + '.';
+                                    // Handle bold formatting
+                                    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+                                    
+                                    return (
+                                      <p key={itemIndex} className="text-gray-700 text-sm leading-relaxed">
+                                        • {parts.map((part, partIndex) => {
+                                          if (part.startsWith('**') && part.endsWith('**')) {
+                                            return (
+                                              <strong key={partIndex} className="font-semibold text-gray-900">
+                                                {part.slice(2, -2)}
+                                              </strong>
+                                            );
+                                          }
+                                          return part;
+                                        })}
+                                      </p>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      } else {
+                        // Fallback to original format if parsing fails
+                        return <p className="text-gray-700 leading-relaxed">{expert.bio}</p>;
+                      }
+                    })()}
                   </div>
                   
                   {/* Expert Score and Rationale */}
