@@ -5,6 +5,7 @@ import { semanticSearch } from '../services/vectorUploader';
 import { generateExpertsForQuery } from '../services/aiExpertService';
 import { searchExpertsSemanticly, expertVectorTableExists } from '../services/expertVectorUploader';
 import { supabase } from '../services/supabaseClient';
+import { enhanceSearchQuery } from '../services/smartQueryService';
 import ExpertCard from './ExpertCard';
 
 const FindExpert = () => {
@@ -17,6 +18,7 @@ const FindExpert = () => {
   const [useSemanticSearch, setUseSemanticSearch] = useState(true);
   const [totalContacts, setTotalContacts] = useState(0);
   const [expertVectorAvailable, setExpertVectorAvailable] = useState(false);
+  const [searchMetadata, setSearchMetadata] = useState(null);
 
   // Load total contacts count and check expert vector availability on mount
   useEffect(() => {
@@ -69,93 +71,43 @@ const FindExpert = () => {
 
     setIsSearching(true);
     setHasSearched(true);
+    setSearchMetadata(null); // Reset metadata
 
     try {
       let results = [];
+      let enhancedQuery = searchQuery; // Default to original
       
       if (useSemanticSearch) {
         try {
-          // Try expert vector search first if available
-          if (expertVectorAvailable) {
-            const expertResults = await searchExpertsSemanticly(searchQuery, {
-              similarityThreshold: 0.6,
-              maxResults: 10,
-              minExpertScore: 1
-            });
-            
-            // Transform expert results to match expected format
-            results = expertResults.map(expert => ({
-              id: expert.id,
-              name: expert.name,
-              title: expert.ld_position || expert.position,
-              company: expert.ld_company || expert.current_company?.name || expert.current_company,
-              location: expert.location,
-              linkedin: null, // Expert profiles don't have direct LinkedIn URLs
-              innovera_contact: 'Expert Profile',
-              industry: expert.industry,
-              avatar: expert.avatar,
-              expert_score: expert.expert_score,
-              scoring_rationale: expert.scoring_rationale,
-              followers: expert.followers,
-              connections: expert.connections,
-              similarity: expert.similarity,
-              isExpert: true,
-              // Ensure expertise is always an array
-              expertise: Array.isArray(expert.industry) ? expert.industry : (expert.industry ? [expert.industry] : []),
-              type: 'Expert Profile',
-              function: 'Expert',
-              availability: 'Unknown',
-              photo: expert.avatar
-            }));
-          } else {
-            // Fall back to contact vector search
-            const vectorResults = await semanticSearch(searchQuery, { matchCount: 10 });
-            results = vectorResults.map(contact => ({
-              ...transformContactToExpert(contact),
-              similarity: contact.similarity
-            }));
-          }
-        } catch (error) {
-          console.warn('Semantic search failed, falling back to text search:', error);
-          // Show detailed error information
-          console.error('Detailed semantic search error:', {
-            message: error.message,
-            stack: error.stack,
-            query: searchQuery
-          });
+          // STEP 1: Enhance the search query with AI
+          console.log('🔄 Enhancing search query...');
+          const queryEnhancement = await enhanceSearchQuery(searchQuery);
           
-          // Fall back to text search
-          const textResults = await searchContacts(searchQuery, { limit: 20 });
-          results = textResults.map(transformContactToExpert);
-        }
-      } else {
-        // Use regular text search
-        const textResults = await searchContacts(searchQuery, { limit: 20 });
-        results = textResults.map(transformContactToExpert);
-      }
-
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search failed:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleQuickSearch = async (term) => {
-    setSearchQuery(term);
-    setIsSearching(true);
-    setHasSearched(true);
-
-    try {
-      let results = [];
-      
-      if (useSemanticSearch) {
-        try {
+          if (queryEnhancement.success) {
+            enhancedQuery = queryEnhancement.enhanced;
+            console.log('✅ Query enhanced from:', searchQuery);
+            console.log('✅ Query enhanced to:', enhancedQuery.substring(0, 100) + '...');
+            
+            // Store metadata for display (optional)
+            setSearchMetadata({
+              originalQuery: searchQuery,
+              enhancedQuery: enhancedQuery,
+              enhancementWorked: true
+            });
+          } else {
+            console.warn('⚠️ Query enhancement failed, using original query');
+            setSearchMetadata({
+              originalQuery: searchQuery,
+              enhancedQuery: searchQuery,
+              enhancementWorked: false,
+              error: queryEnhancement.error
+            });
+          }
+          
           // Try expert vector search first if available
           if (expertVectorAvailable) {
-            const expertResults = await searchExpertsSemanticly(term, {
+            // Use the enhanced query for embedding
+            const expertResults = await searchExpertsSemanticly(enhancedQuery, {
               similarityThreshold: 0.6,
               maxResults: 10,
               minExpertScore: 1
@@ -178,28 +130,122 @@ const FindExpert = () => {
               connections: expert.connections,
               similarity: expert.similarity,
               isExpert: true,
-              // Ensure expertise is always an array
               expertise: Array.isArray(expert.industry) ? expert.industry : (expert.industry ? [expert.industry] : []),
               type: 'Expert Profile',
               function: 'Expert',
               availability: 'Unknown',
-              photo: expert.avatar
+              photo: expert.avatar,
+              // Add indicator that this used enhanced search
+              usedEnhancedSearch: queryEnhancement.success
             }));
           } else {
-            // Fall back to contact vector search
-            const vectorResults = await semanticSearch(term, { matchCount: 10 });
+            // Fall back to contact vector search with enhanced query
+            const vectorResults = await semanticSearch(enhancedQuery, { matchCount: 10 });
             results = vectorResults.map(contact => ({
               ...transformContactToExpert(contact),
-              similarity: contact.similarity
+              similarity: contact.similarity,
+              usedEnhancedSearch: queryEnhancement.success
             }));
           }
         } catch (error) {
           console.warn('Semantic search failed, falling back to text search:', error);
-          console.error('Detailed semantic search error (quick search):', {
+          console.error('Detailed semantic search error:', {
             message: error.message,
             stack: error.stack,
-            query: term
+            query: searchQuery
           });
+          
+          // Fall back to text search with original query
+          const textResults = await searchContacts(searchQuery, { limit: 20 });
+          results = textResults.map(transformContactToExpert);
+        }
+      } else {
+        // Use regular text search with original query
+        const textResults = await searchContacts(searchQuery, { limit: 20 });
+        results = textResults.map(transformContactToExpert);
+      }
+
+      setSearchResults(results);
+      
+      // Log results for debugging
+      console.log(`🎯 Search completed: ${results.length} results found`);
+      if (results.length > 0) {
+        console.log('Top result:', results[0].name, '- Similarity:', results[0].similarity);
+      }
+      
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleQuickSearch = async (term) => {
+    setSearchQuery(term);
+    setIsSearching(true);
+    setHasSearched(true);
+    setSearchMetadata(null);
+
+    try {
+      let results = [];
+      let enhancedQuery = term; // Default to original
+      
+      if (useSemanticSearch) {
+        try {
+          // Enhance the quick search query too
+          const queryEnhancement = await enhanceSearchQuery(term);
+          
+          if (queryEnhancement.success) {
+            enhancedQuery = queryEnhancement.enhanced;
+            setSearchMetadata({
+              originalQuery: term,
+              enhancedQuery: enhancedQuery,
+              enhancementWorked: true
+            });
+          }
+          
+          // Continue with the same logic as handleSearch...
+          if (expertVectorAvailable) {
+            const expertResults = await searchExpertsSemanticly(enhancedQuery, {
+              similarityThreshold: 0.6,
+              maxResults: 10,
+              minExpertScore: 1
+            });
+            
+            results = expertResults.map(expert => ({
+              id: expert.id,
+              name: expert.name,
+              title: expert.ld_position || expert.position,
+              company: expert.ld_company || expert.current_company?.name || expert.current_company,
+              location: expert.location,
+              linkedin: null,
+              innovera_contact: 'Expert Profile',
+              industry: expert.industry,
+              avatar: expert.avatar,
+              expert_score: expert.expert_score,
+              scoring_rationale: expert.scoring_rationale,
+              followers: expert.followers,
+              connections: expert.connections,
+              similarity: expert.similarity,
+              isExpert: true,
+              expertise: Array.isArray(expert.industry) ? expert.industry : (expert.industry ? [expert.industry] : []),
+              type: 'Expert Profile',
+              function: 'Expert',
+              availability: 'Unknown',
+              photo: expert.avatar,
+              usedEnhancedSearch: queryEnhancement.success
+            }));
+          } else {
+            const vectorResults = await semanticSearch(enhancedQuery, { matchCount: 10 });
+            results = vectorResults.map(contact => ({
+              ...transformContactToExpert(contact),
+              similarity: contact.similarity,
+              usedEnhancedSearch: queryEnhancement.success
+            }));
+          }
+        } catch (error) {
+          console.warn('Semantic search failed, falling back to text search:', error);
           const textResults = await searchContacts(term, { limit: 20 });
           results = textResults.map(transformContactToExpert);
         }
@@ -265,6 +311,24 @@ const FindExpert = () => {
   };
 
   // All results are now real contacts from Supabase
+
+  const SearchEnhancementIndicator = ({ metadata }) => {
+    if (!metadata || !metadata.enhancementWorked) return null;
+    
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center space-x-2 mb-2">
+          <Brain className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-blue-900">Smart Search Active</span>
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Enhanced</span>
+        </div>
+        <div className="text-sm text-blue-800">
+          <div className="font-medium">Original: "{metadata.originalQuery}"</div>
+          <div className="mt-1">Enhanced to include: {metadata.enhancedQuery.substring(0, 120)}...</div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -437,6 +501,10 @@ const FindExpert = () => {
                   Clear search
                 </button>
               </div>
+
+              {hasSearched && searchMetadata && (
+                <SearchEnhancementIndicator metadata={searchMetadata} />
+              )}
 
               {/* Search Results */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

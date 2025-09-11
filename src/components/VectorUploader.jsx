@@ -35,6 +35,7 @@ const VectorUploader = () => {
       const { data: contacts, error } = await supabase
         .from('contacts_vector')
         .select('*')
+        .limit(10000) // Explicit high limit to get all contacts
         .order('created_at', { ascending: false });
       
       if (error) {

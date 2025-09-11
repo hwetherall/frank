@@ -221,14 +221,33 @@ const ExpertScorer = () => {
     try {
       console.log('Downloading expert database...');
       
-      const { data, error } = await supabase
-        .from('expert_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw new Error(`Database query error: ${error.message}`);
+      // Load all expert profiles using pagination to bypass Supabase's 1000 row limit
+      let allExperts = [];
+      let hasMore = true;
+      let offset = 0;
+      const batchSize = 1000;
+      
+      while (hasMore) {
+        const { data: expertBatch, error } = await supabase
+          .from('expert_profiles')
+          .select('*')
+          .range(offset, offset + batchSize - 1)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw new Error(`Database query error: ${error.message}`);
+        }
+        
+        if (expertBatch && expertBatch.length > 0) {
+          allExperts = [...allExperts, ...expertBatch];
+          offset += batchSize;
+          hasMore = expertBatch.length === batchSize;
+        } else {
+          hasMore = false;
+        }
       }
+      
+      const data = allExperts;
 
       if (!data || data.length === 0) {
         setErrors(['No expert profiles found in database']);

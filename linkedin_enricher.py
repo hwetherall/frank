@@ -291,10 +291,10 @@ def main():
     API_KEY = "6873e035c1eb44ca8e06781c"
     
     # Input file (your Excel file)
-    INPUT_FILE = "Contacts Table _ Innovera - Scraping Dog.xlsx"
+    INPUT_FILE = "MasterList - Scraping Dog.xlsx"
     
     # Optional: specify output file name (if None, will auto-generate)
-    OUTPUT_FILE = None  # Will create: "Contacts Table _ Innovera  Scraping Dog_enriched_YYYYMMDD_HHMMSS.xlsx"
+    OUTPUT_FILE = None  # Will create: "MasterList  Scraping Dog_enriched_YYYYMMDD_HHMMSS.xlsx"
     
     # Initialize the enricher
     enricher = InoveraLinkedInEnricher(API_KEY)

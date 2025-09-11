@@ -26,7 +26,7 @@ const ViewDatabase = () => {
   const loadContacts = async () => {
     try {
       setLoading(true);
-      const contactsData = await getAllContacts({ limit: 1000 });
+      const contactsData = await getAllContacts({ limit: 10000 }); // Increased limit to get all contacts
       setContacts(contactsData);
       setError(null);
     } catch (err) {

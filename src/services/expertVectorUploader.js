@@ -225,14 +225,36 @@ export const vectorizeAndUploadExperts = async (progressCallback = null) => {
       progressCallback({ step: 'loading', message: 'Loading expert profiles from database...' });
     }
     
-    const { data: experts, error: loadError } = await supabase
-      .from('expert_profiles')
-      .select('*')
-      .order('expert_score', { ascending: false, nullsLast: true });
+    // Load all expert profiles using pagination to bypass Supabase's 1000 row limit
+    let allExperts = [];
+    let hasMore = true;
+    let offset = 0;
+    const batchSize = 1000;
     
-    if (loadError) {
-      throw new Error(`Failed to load expert profiles: ${loadError.message}`);
+    while (hasMore) {
+      console.log(`Loading expert batch ${Math.floor(offset / batchSize) + 1} (offset: ${offset})`);
+      
+      const { data: expertBatch, error: loadError } = await supabase
+        .from('expert_profiles')
+        .select('*')
+        .range(offset, offset + batchSize - 1)
+        .order('expert_score', { ascending: false, nullsLast: true });
+      
+      if (loadError) {
+        throw new Error(`Failed to load expert profiles: ${loadError.message}`);
+      }
+      
+      if (expertBatch && expertBatch.length > 0) {
+        allExperts = [...allExperts, ...expertBatch];
+        offset += batchSize;
+        hasMore = expertBatch.length === batchSize;
+        console.log(`Loaded ${expertBatch.length} experts, total: ${allExperts.length}`);
+      } else {
+        hasMore = false;
+      }
     }
+    
+    const experts = allExperts;
     
     if (!experts || experts.length === 0) {
       throw new Error('No expert profiles found. Please upload expert data first.');

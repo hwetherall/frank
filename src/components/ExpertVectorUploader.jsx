@@ -49,17 +49,41 @@ const ExpertVectorUploader = () => {
       const tableExists = await expertVectorTableExists();
       setTableStatus({ exists: tableExists });
       
-      // Load expert profiles from regular table
-      const { data: experts, error } = await supabase
-        .from('expert_profiles')
-        .select('*')
-        .order('expert_score', { ascending: false, nullsLast: true });
+      // Load expert profiles from regular table using pagination to get all records
+      console.log('🔍 ExpertVectorUploader: Loading all experts using pagination...');
       
-      if (error) {
-        throw new Error(`Failed to load expert profiles: ${error.message}`);
+      let allExperts = [];
+      let hasMore = true;
+      let offset = 0;
+      const batchSize = 1000;
+      
+      while (hasMore) {
+        console.log(`🔍 Loading batch ${Math.floor(offset / batchSize) + 1} (offset: ${offset})`);
+        
+        const { data: expertBatch, error } = await supabase
+          .from('expert_profiles')
+          .select('*')
+          .range(offset, offset + batchSize - 1)
+          .order('expert_score', { ascending: false, nullsLast: true });
+        
+        if (error) {
+          console.error('🚨 ExpertVectorUploader: Database error:', error);
+          throw new Error(`Failed to load expert profiles: ${error.message}`);
+        }
+        
+        if (expertBatch && expertBatch.length > 0) {
+          allExperts = [...allExperts, ...expertBatch];
+          offset += batchSize;
+          hasMore = expertBatch.length === batchSize; // Continue if we got a full batch
+          console.log(`🔍 Loaded ${expertBatch.length} experts, total so far: ${allExperts.length}`);
+        } else {
+          hasMore = false;
+        }
       }
       
-      setExpertData(experts || []);
+      console.log('🔍 ExpertVectorUploader: Successfully loaded', allExperts.length, 'experts from database');
+      console.log('🔍 ExpertVectorUploader: First few experts:', allExperts.slice(0, 3)?.map(e => e.name));
+      setExpertData(allExperts);
       
       // Get vector table stats if it exists
       if (tableExists) {
