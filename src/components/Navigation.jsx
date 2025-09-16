@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Database, User, Briefcase, ChevronRight, Upload, Brain, Award, Zap } from 'lucide-react';
+import { Search, Database, User, Briefcase, ChevronRight, Upload, Brain, Award, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { validateOpenAIKey } from '../services/expertEmbeddings';
 
 const Navigation = () => {
   const location = useLocation();
+  const [apiStatus, setApiStatus] = useState({ openai: 'unknown', groq: 'unknown' });
   
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
+
+  useEffect(() => {
+    // Check API key validity on mount
+    const checkAPIs = () => {
+      const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+      
+      const openaiValid = validateOpenAIKey(openaiKey).valid;
+      const groqValid = groqKey && groqKey.length > 10;
+      
+      setApiStatus({
+        openai: openaiValid ? 'valid' : 'invalid',
+        groq: groqValid ? 'valid' : 'invalid'
+      });
+    };
+    
+    checkAPIs();
+  }, []);
 
   return (
     <nav className="bg-gradient-to-r from-frank-blue to-frank-light-blue shadow-lg">
@@ -107,6 +127,28 @@ const Navigation = () => {
                   <span>Expert Profile</span>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* API Status Indicators */}
+          <div className="hidden md:flex items-center space-x-3">
+            <div className="flex items-center space-x-2 text-xs">
+              <div className="flex items-center space-x-1">
+                {apiStatus.openai === 'valid' ? (
+                  <CheckCircle className="h-4 w-4 text-green-300" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-300" />
+                )}
+                <span className="text-blue-100">OpenAI</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {apiStatus.groq === 'valid' ? (
+                  <CheckCircle className="h-4 w-4 text-green-300" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-300" />
+                )}
+                <span className="text-blue-100">Groq</span>
+              </div>
             </div>
           </div>
 

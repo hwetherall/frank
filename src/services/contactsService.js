@@ -521,6 +521,283 @@ const createDetailedNotes = (contact) => {
 };
 
 /**
+ * Get all experts from expert_profiles table
+ * @param {Object} options - Query options
+ * @returns {Promise<Array>} - Array of experts
+ */
+export const getAllExperts = async (options = {}) => {
+  try {
+    const {
+      limit = null,
+      offset = 0,
+      orderBy = 'expert_score',
+      ascending = false
+    } = options;
+
+    let query = supabase
+      .from('expert_profiles')
+      .select('*')
+      .order(orderBy, { ascending, nullsLast: true });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    if (offset > 0) {
+      query = query.range(offset, offset + (limit || 100) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      // If expert_profiles doesn't exist, try expert_profiles_vector
+      if (error.message.includes('relation "expert_profiles" does not exist')) {
+        return await getAllExpertsFromVector(options);
+      }
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching experts:', error);
+    // Try fallback to vector table
+    try {
+      return await getAllExpertsFromVector(options);
+    } catch (fallbackError) {
+      console.error('Error fetching experts from vector table:', fallbackError);
+      throw new Error(`Failed to fetch experts: ${error.message}`);
+    }
+  }
+};
+
+/**
+ * Get all experts from expert_profiles_vector table
+ * @param {Object} options - Query options
+ * @returns {Promise<Array>} - Array of experts
+ */
+export const getAllExpertsFromVector = async (options = {}) => {
+  try {
+    const {
+      limit = null,
+      offset = 0,
+      orderBy = 'expert_score',
+      ascending = false
+    } = options;
+
+    let query = supabase
+      .from('expert_profiles_vector')
+      .select('*')
+      .order(orderBy, { ascending, nullsLast: true });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    if (offset > 0) {
+      query = query.range(offset, offset + (limit || 100) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching experts from vector table:', error);
+    throw new Error(`Failed to fetch experts from vector table: ${error.message}`);
+  }
+};
+
+/**
+ * Get expert statistics
+ * @returns {Promise<Object>} - Statistics object
+ */
+export const getExpertStats = async () => {
+  try {
+    // Try expert_profiles first
+    let tableName = 'expert_profiles';
+    let { count: totalCount, error: countError } = await supabase
+      .from(tableName)
+      .select('*', { count: 'exact', head: true });
+
+    // If expert_profiles doesn't exist, try expert_profiles_vector
+    if (countError && countError.message.includes('relation "expert_profiles" does not exist')) {
+      tableName = 'expert_profiles_vector';
+      const result = await supabase
+        .from(tableName)
+        .select('*', { count: 'exact', head: true });
+      totalCount = result.count;
+      countError = result.error;
+    }
+
+    if (countError) {
+      throw countError;
+    }
+
+    // Get industry distribution
+    const { data: industryData, error: industryError } = await supabase
+      .from(tableName)
+      .select('industry');
+
+    if (industryError) {
+      throw industryError;
+    }
+
+    // Process industry data
+    const industryCount = {};
+    industryData.forEach(expert => {
+      if (expert.industry) {
+        let industries;
+        if (Array.isArray(expert.industry)) {
+          industries = expert.industry;
+        } else if (typeof expert.industry === 'string') {
+          industries = [expert.industry];
+        } else if (typeof expert.industry === 'object' && expert.industry !== null) {
+          // Handle case where industry might be an object
+          industries = [expert.industry.name || expert.industry.title || String(expert.industry)];
+        } else {
+          industries = [String(expert.industry)];
+        }
+        
+        industries.forEach(industry => {
+          if (industry && typeof industry === 'string' && industry.trim()) {
+            industryCount[industry] = (industryCount[industry] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    // Get company distribution (using correct field names for each table)
+    const companyField = tableName === 'expert_profiles_vector' ? 'current_company' : 'ld_company';
+    const { data: companyData, error: companyError } = await supabase
+      .from(tableName)
+      .select(companyField)
+      .not(companyField, 'is', null);
+
+    if (companyError) {
+      throw companyError;
+    }
+
+    const companyCount = {};
+    companyData.forEach(expert => {
+      let company = expert[companyField] || expert.company;
+      
+      // Handle case where company might be an object
+      if (typeof company === 'object' && company !== null) {
+        company = company.name || company.title || String(company);
+      }
+      
+      if (company && typeof company === 'string' && company.trim()) {
+        companyCount[company] = (companyCount[company] || 0) + 1;
+      }
+    });
+
+    return {
+      totalExperts: totalCount,
+      uniqueIndustries: Object.keys(industryCount).length,
+      uniqueCompanies: Object.keys(companyCount).length,
+      industryDistribution: industryCount,
+      topCompanies: Object.entries(companyCount)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10)
+        .reduce((obj, [company, count]) => ({ ...obj, [company]: count }), {}),
+      tableName: tableName
+    };
+  } catch (error) {
+    console.error('Error fetching expert stats:', error);
+    throw new Error(`Failed to fetch expert statistics: ${error.message}`);
+  }
+};
+
+/**
+ * Transform expert data to match the expected format for ViewDatabase
+ * @param {Object} expert - Expert object from database
+ * @returns {Object} - Transformed expert object
+ */
+export const transformExpertForDisplay = (expert) => {
+  if (!expert) return null;
+
+  // Handle different field names between expert_profiles and expert_profiles_vector
+  // Ensure all fields are strings, not objects
+  const name = typeof expert.name === 'string' ? expert.name : (expert.name?.name || 'Unknown');
+  const company = typeof expert.current_company === 'string' ? expert.current_company : 
+                  typeof expert.ld_company === 'string' ? expert.ld_company :
+                  (expert.current_company?.name || expert.ld_company?.name || expert.company?.name || expert.company || 'Unknown Company');
+  const title = typeof expert.position === 'string' ? expert.position : 
+                typeof expert.ld_position === 'string' ? expert.ld_position :
+                (expert.position?.title || expert.ld_position?.title || expert.title || 'Unknown Title');
+  
+  // Handle industry field more carefully
+  let industry = 'Unknown';
+  if (expert.industry) {
+    if (typeof expert.industry === 'string') {
+      industry = expert.industry;
+    } else if (Array.isArray(expert.industry)) {
+      // Filter out any non-string items and join
+      const validIndustries = expert.industry
+        .map(ind => typeof ind === 'string' ? ind : (ind?.name || ind?.title || ''))
+        .filter(ind => ind && ind.trim());
+      industry = validIndustries.length > 0 ? validIndustries.join(', ') : 'Unknown';
+    } else if (typeof expert.industry === 'object' && expert.industry !== null) {
+      industry = expert.industry.name || expert.industry.title || 'Unknown';
+    }
+  }
+  
+  const location = typeof expert.location === 'string' ? expert.location : 
+                   (expert.location?.name || expert.location || null);
+
+  // Process industries for the industries array
+  let industries = [];
+  let industryText = industry; // Use the cleaned industry value
+  
+  if (industry && industry !== 'Unknown') {
+    if (industry.includes(', ')) {
+      // Split comma-separated industries
+      industries = industry.split(', ').map(ind => ind.trim()).filter(ind => ind);
+    } else {
+      industries = [industry];
+    }
+  }
+
+  return {
+    id: expert.id,
+    name: name,
+    company: company,
+    title: title,
+    industry: industryText,
+    industries: industries,
+    linkedin: expert.linkedin || null,
+    email: expert.email || null,
+    phone: expert.phone || null,
+    location: location,
+    type: 'Expert Profile',
+    lead: expert.innovera_contact || expert.lead || 'Unknown',
+    expertise: industries,
+    function: inferFunctionFromTitle(title),
+    notes: `Expert Score: ${expert.expert_score || 'N/A'}${expert.scoring_rationale ? ` - ${expert.scoring_rationale}` : ''}`,
+    lastContact: expert.created_at ? new Date(expert.created_at).toISOString().split('T')[0] : null,
+    availability: 'Unknown',
+    yearsExperience: null,
+    certifications: [],
+    bio: `${title} at ${company}. ${expert.scoring_rationale || 'Professional expert in our network.'}`,
+    rating: expert.expert_score || null,
+    reviewCount: 0,
+    photo: generateAvatarUrl(name),
+    created_at: expert.created_at,
+    updated_at: expert.updated_at,
+    // Expert-specific fields
+    followers: expert.followers || 0,
+    connections: expert.connections || 0,
+    posts_count: expert.posts_count || 0,
+    activity_count: expert.activity_count || 0,
+    expert_score: expert.expert_score || null,
+    scoring_rationale: expert.scoring_rationale || null
+  };
+};
+
+/**
  * Generate avatar URL
  */
 const generateAvatarUrl = (name) => {

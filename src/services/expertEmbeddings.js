@@ -3,6 +3,10 @@ const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 if (!OPENAI_API_KEY) {
   console.error('Missing OPENAI_API_KEY. Please add VITE_OPENAI_API_KEY to your .env file');
+} else if (!OPENAI_API_KEY.startsWith('sk-')) {
+  console.error('Invalid OPENAI_API_KEY format. OpenAI API keys should start with "sk-"');
+} else {
+  console.log('✅ OpenAI API key loaded successfully');
 }
 
 /**
@@ -147,8 +151,22 @@ export const generateEmbeddings = async (text, options = {}) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error?.message || errorMessage;
+        } catch (e) {
+          // If we can't parse error JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        
+        if (response.status === 401) {
+          throw new Error(`OpenAI API authentication failed: ${errorMessage}. Please check your API key in the .env file.`);
+        } else if (response.status === 429) {
+          throw new Error(`OpenAI API rate limit exceeded: ${errorMessage}. Please try again later.`);
+        } else {
+          throw new Error(`OpenAI API error: ${response.status} - ${errorMessage}`);
+        }
       }
 
       const data = await response.json();
@@ -255,11 +273,51 @@ export const embedSearchQuery = async (query) => {
     throw new Error('Search query cannot be empty');
   }
   
-  // Enhance query for better expert matching
-  const enhancedQuery = `Find innovation consulting expert: ${query}`;
+  try {
+    // Enhance query for better expert matching
+    const enhancedQuery = `Find innovation consulting expert: ${query}`;
+    
+    const embeddingResults = await generateEmbeddings(enhancedQuery);
+    return embeddingResults[0]?.embedding;
+  } catch (error) {
+    console.warn('⚠️ OpenAI embedding failed, falling back to simple text matching:', error.message);
+    // Return null to indicate fallback to text search should be used
+    return null;
+  }
+};
+
+/**
+ * Validate OpenAI API key format
+ * @param {string} apiKey - API key to validate
+ * @returns {Object} - Validation result
+ */
+export const validateOpenAIKey = (apiKey) => {
+  if (!apiKey) {
+    return {
+      valid: false,
+      message: 'API key is missing'
+    };
+  }
   
-  const embeddingResults = await generateEmbeddings(enhancedQuery);
-  return embeddingResults[0]?.embedding;
+  if (!apiKey.startsWith('sk-')) {
+    return {
+      valid: false,
+      message: 'API key should start with "sk-"'
+    };
+  }
+  
+  // Basic length check - OpenAI keys are typically around 51 characters
+  if (apiKey.length < 40) {
+    return {
+      valid: false,
+      message: 'API key appears to be too short'
+    };
+  }
+  
+  return {
+    valid: true,
+    message: 'API key format is valid'
+  };
 };
 
 /**
@@ -272,6 +330,14 @@ export const testEmbeddingsAPI = async () => {
       return {
         success: false,
         message: 'OpenAI API key not configured'
+      };
+    }
+    
+    const validation = validateOpenAIKey(OPENAI_API_KEY);
+    if (!validation.valid) {
+      return {
+        success: false,
+        message: `Invalid API key: ${validation.message}`
       };
     }
     

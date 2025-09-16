@@ -99,7 +99,7 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
               {expert.company && (
                 <div className="flex items-center space-x-1">
                   <Building2 className="h-3 w-3" />
-                  <span>{expert.company}</span>
+                  <span>{typeof expert.company === 'object' ? expert.company.name || expert.company.company || 'Unknown Company' : expert.company}</span>
                 </div>
               )}
               {expert.function && expert.function !== 'Unknown' && (
@@ -111,7 +111,7 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
               {expert.location && (
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-3 w-3" />
-                  <span>{expert.location}</span>
+                  <span>{typeof expert.location === 'object' ? expert.location.location || 'Unknown' : expert.location}</span>
                 </div>
               )}
               {expert.lead && expert.lead !== 'Unknown' && (
@@ -253,7 +253,7 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
           {expert.location && (
             <div className="flex items-center space-x-2 text-gray-600">
               <MapPin className="h-4 w-4 text-gray-400" />
-              <span className="text-sm">{expert.location}</span>
+              <span className="text-sm">{typeof expert.location === 'object' ? expert.location.location || 'Unknown' : expert.location}</span>
             </div>
           )}
           {expert.lead && expert.lead !== 'Unknown' && (
@@ -279,7 +279,7 @@ const ExpertCard = ({ expert, variant = 'default' }) => {
           {expert.company && (
             <div className="flex items-center space-x-2 text-gray-600">
               <Building2 className="h-4 w-4 text-gray-400" />
-              <span className="text-sm">{expert.company}</span>
+              <span className="text-sm">{typeof expert.company === 'object' ? expert.company.name || expert.company.company || 'Unknown Company' : expert.company}</span>
             </div>
           )}
           {expert.title && (

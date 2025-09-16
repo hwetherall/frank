@@ -5,7 +5,7 @@ import {
   Briefcase, CheckCircle, AlertCircle, 
   Clock, Download, RefreshCw, User, Users, Loader 
 } from 'lucide-react';
-import { getAllContacts, searchContacts, transformContactToExpert, getContactStats } from '../services/contactsService';
+import { getAllContacts, searchContacts, transformContactToExpert, getContactStats, getAllExperts, getExpertStats, transformExpertForDisplay } from '../services/contactsService';
 import StarRating from './StarRating';
 
 const ViewDatabase = () => {
@@ -13,80 +13,128 @@ const ViewDatabase = () => {
   const [industryFilter, setIndustryFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(true);
   const [contacts, setContacts] = useState([]);
+  const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
+  const [dataSource, setDataSource] = useState('experts'); // 'experts' or 'contacts'
 
-  // Load contacts on component mount
+  // Load data on component mount
   useEffect(() => {
-    loadContacts();
+    loadData();
     loadStats();
-  }, []);
+  }, [dataSource]);
 
-  const loadContacts = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const contactsData = await getAllContacts({ limit: 10000 }); // Increased limit to get all contacts
-      setContacts(contactsData);
+      if (dataSource === 'experts') {
+        const expertsData = await getAllExperts({ limit: 10000 });
+        setExperts(expertsData);
+        setContacts([]); // Clear contacts when loading experts
+      } else {
+        const contactsData = await getAllContacts({ limit: 10000 });
+        setContacts(contactsData);
+        setExperts([]); // Clear experts when loading contacts
+      }
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Failed to load contacts:', err);
+      console.error(`Failed to load ${dataSource}:`, err);
+      // If experts fail to load, try contacts as fallback
+      if (dataSource === 'experts') {
+        try {
+          const contactsData = await getAllContacts({ limit: 10000 });
+          setContacts(contactsData);
+          setExperts([]);
+          setDataSource('contacts');
+          setError(null);
+        } catch (contactsErr) {
+          console.error('Failed to load contacts as fallback:', contactsErr);
+        }
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const loadContacts = async () => {
+    setDataSource('contacts');
+  };
+
   const loadStats = async () => {
     try {
-      const statsData = await getContactStats();
-      setStats(statsData);
+      if (dataSource === 'experts') {
+        const statsData = await getExpertStats();
+        setStats(statsData);
+      } else {
+        const statsData = await getContactStats();
+        setStats(statsData);
+      }
     } catch (err) {
-      console.error('Failed to load stats:', err);
+      console.error(`Failed to load ${dataSource} stats:`, err);
     }
   };
 
-  // Transform contacts to expert format for compatibility
-  const experts = useMemo(() => {
-    return contacts.map(transformContactToExpert);
-  }, [contacts]);
+  // Transform data for display
+  const displayData = useMemo(() => {
+    if (dataSource === 'experts') {
+      return experts.map(transformExpertForDisplay);
+    } else {
+      return contacts.map(transformContactToExpert);
+    }
+  }, [contacts, experts, dataSource]);
 
   // Extract unique values for filters
   const industries = useMemo(() => {
     const allIndustries = new Set();
-    contacts.forEach(contact => {
-      if (Array.isArray(contact.industry)) {
-        contact.industry.forEach(ind => allIndustries.add(ind));
-      } else if (contact.industry) {
-        allIndustries.add(contact.industry);
+    const sourceData = dataSource === 'experts' ? experts : contacts;
+    sourceData.forEach(item => {
+      let industry = item.industry;
+      
+      // Handle case where industry might be an object
+      if (typeof industry === 'object' && industry !== null && !Array.isArray(industry)) {
+        industry = industry.name || industry.title || String(industry);
+      }
+      
+      if (Array.isArray(industry)) {
+        industry.forEach(ind => {
+          // Handle nested objects in array
+          const indStr = typeof ind === 'object' && ind !== null ? (ind.name || ind.title || String(ind)) : ind;
+          if (indStr && typeof indStr === 'string' && indStr.trim() && indStr !== 'Unknown') {
+            allIndustries.add(indStr);
+          }
+        });
+      } else if (industry && typeof industry === 'string' && industry.trim() && industry !== 'Unknown') {
+        allIndustries.add(industry);
       }
     });
     return [...allIndustries].sort();
-  }, [contacts]);
+  }, [contacts, experts, dataSource]);
 
-  // Filter experts based on criteria
-  const filteredExperts = useMemo(() => {
+  // Filter data based on criteria
+  const filteredData = useMemo(() => {
     if (searchTerm.trim()) {
       // If there's a search term, don't apply other filters to keep it simple
-      return experts.filter(expert => {
+      return displayData.filter(item => {
         const searchLower = searchTerm.toLowerCase();
-        return expert.name.toLowerCase().includes(searchLower) ||
-               expert.company.toLowerCase().includes(searchLower) ||
-               expert.title.toLowerCase().includes(searchLower) ||
-               expert.industry.toLowerCase().includes(searchLower) ||
-               expert.lead.toLowerCase().includes(searchLower);
+        return item.name.toLowerCase().includes(searchLower) ||
+               item.company.toLowerCase().includes(searchLower) ||
+               item.title.toLowerCase().includes(searchLower) ||
+               item.industry.toLowerCase().includes(searchLower) ||
+               (item.lead && item.lead.toLowerCase().includes(searchLower));
       });
     }
 
-    return experts.filter(expert => {
+    return displayData.filter(item => {
       const matchesIndustry = industryFilter === 'all' || 
-        (Array.isArray(expert.industries) ? 
-          expert.industries.some(ind => ind === industryFilter) : 
-          expert.industry.includes(industryFilter));
+        (Array.isArray(item.industries) ? 
+          item.industries.some(ind => ind === industryFilter) : 
+          item.industry.includes(industryFilter));
 
       return matchesIndustry;
     });
-  }, [experts, searchTerm, industryFilter]);
+  }, [displayData, searchTerm, industryFilter]);
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -113,7 +161,7 @@ const ViewDatabase = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader className="w-8 h-8 animate-spin text-frank-blue mx-auto mb-4" />
-          <p className="text-gray-600">Loading contacts from Supabase...</p>
+          <p className="text-gray-600">Loading {dataSource === 'experts' ? 'experts' : 'contacts'} from Supabase...</p>
         </div>
       </div>
     );
@@ -124,14 +172,24 @@ const ViewDatabase = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Contacts</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading {dataSource === 'experts' ? 'Experts' : 'Contacts'}</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={loadContacts}
-            className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
-          >
-            Try Again
-          </button>
+          <div className="space-x-2">
+            <button
+              onClick={loadData}
+              className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
+            >
+              Try Again
+            </button>
+            {dataSource === 'experts' && (
+              <button
+                onClick={() => setDataSource('contacts')}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Load Contacts Instead
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -144,23 +202,45 @@ const ViewDatabase = () => {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Contact Database</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{dataSource === 'experts' ? 'Expert' : 'Contact'} Database</h1>
               <p className="mt-1 text-sm text-gray-600">
-                Browse and manage all {contacts.length} contacts from Supabase
+                Browse and manage all {dataSource === 'experts' ? experts.length : contacts.length} {dataSource === 'experts' ? 'experts' : 'contacts'} from Supabase
                 {stats && (
                   <span className="ml-2 text-gray-500">
-                    • {stats.uniqueIndustries} industries • {stats.uniqueCompanies} companies
+                    • {dataSource === 'experts' ? stats.uniqueIndustries : stats.uniqueIndustries} industries • {dataSource === 'experts' ? stats.uniqueCompanies : stats.uniqueCompanies} companies
                   </span>
                 )}
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex space-x-3">
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setDataSource('experts')}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    dataSource === 'experts' 
+                      ? 'bg-white text-frank-blue shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Experts
+                </button>
+                <button
+                  onClick={() => setDataSource('contacts')}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    dataSource === 'contacts' 
+                      ? 'bg-white text-frank-blue shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Contacts
+                </button>
+              </div>
               <button className="px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors flex items-center space-x-2">
                 <Download className="h-4 w-4" />
                 <span>Export</span>
               </button>
               <button 
-                onClick={loadContacts}
+                onClick={loadData}
                 className="px-4 py-2 bg-white text-frank-blue border border-frank-blue rounded-lg hover:bg-frank-light-gray transition-colors flex items-center space-x-2"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -176,7 +256,7 @@ const ViewDatabase = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, company, title, industry, or lead..."
+              placeholder={`Search ${dataSource} by name, company, title, industry, or lead...`}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-frank-blue focus:border-transparent"
             />
           </div>
@@ -228,7 +308,7 @@ const ViewDatabase = () => {
               </div>
               <div className="flex items-end">
                 <button
-                  onClick={loadContacts}
+                  onClick={loadData}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -243,8 +323,8 @@ const ViewDatabase = () => {
       {/* Results Count */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
         <p className="text-sm text-gray-600">
-          Showing <span className="font-semibold">{filteredExperts.length}</span> of{' '}
-          <span className="font-semibold">{contacts.length}</span> contacts
+          Showing <span className="font-semibold">{filteredData.length}</span> of{' '}
+          <span className="font-semibold">{dataSource === 'experts' ? experts.length : contacts.length}</span> {dataSource}
         </p>
       </div>
 
@@ -279,7 +359,7 @@ const ViewDatabase = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredExperts.map((expert) => (
+                {filteredData.map((expert) => (
                   <tr key={expert.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-3">
                       <div className="flex items-center">
@@ -314,7 +394,7 @@ const ViewDatabase = () => {
                     </td>
                     <td className="px-3 py-3">
                       <div className="text-sm text-gray-900">
-                        {Array.isArray(expert.industries) ? (
+                        {Array.isArray(expert.industries) && expert.industries.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {expert.industries.map((industry, idx) => (
                               <span key={idx} className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full whitespace-nowrap">
@@ -322,10 +402,12 @@ const ViewDatabase = () => {
                               </span>
                             ))}
                           </div>
-                        ) : (
+                        ) : expert.industry && expert.industry !== 'Unknown' ? (
                           <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full whitespace-nowrap">
                             {expert.industry}
                           </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
                         )}
                       </div>
                     </td>
@@ -366,10 +448,10 @@ const ViewDatabase = () => {
             </table>
           </div>
 
-          {filteredExperts.length === 0 && contacts.length > 0 && (
+          {filteredData.length === 0 && (dataSource === 'experts' ? experts.length > 0 : contacts.length > 0) && (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No contacts found matching your criteria</p>
+              <p className="text-gray-500">No {dataSource} found matching your criteria</p>
               <button
                 onClick={resetFilters}
                 className="mt-4 px-4 py-2 bg-frank-blue text-white rounded-lg hover:bg-frank-blue/90 transition-colors"
@@ -379,11 +461,19 @@ const ViewDatabase = () => {
             </div>
           )}
           
-          {contacts.length === 0 && !loading && (
+          {(dataSource === 'experts' ? experts.length === 0 : contacts.length === 0) && !loading && (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No contacts found in database</p>
-              <p className="text-sm text-gray-400 mt-2">Upload some contacts to get started!</p>
+              <p className="text-gray-500">No {dataSource} found in database</p>
+              <p className="text-sm text-gray-400 mt-2">Upload some {dataSource} to get started!</p>
+              {dataSource === 'experts' && (
+                <button
+                  onClick={() => setDataSource('contacts')}
+                  className="mt-4 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Try Viewing Contacts Instead
+                </button>
+              )}
             </div>
           )}
         </div>

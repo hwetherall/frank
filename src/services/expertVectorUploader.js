@@ -355,7 +355,8 @@ export const searchExpertsSemanticly = async (query, options = {}) => {
     const queryEmbedding = await embedSearchQuery(query);
     
     if (!queryEmbedding) {
-      throw new Error('Failed to generate embedding for search query');
+      console.warn('⚠️ Embedding generation failed, semantic search not available');
+      throw new Error('Embedding service unavailable - please check API configuration');
     }
     
     // Perform semantic search using the SQL function

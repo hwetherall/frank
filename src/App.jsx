@@ -9,6 +9,7 @@ import ExcelUploader from './components/ExcelUploader';
 import VectorUploader from './components/VectorUploader';
 import ExpertScorer from './components/ExpertScorer';
 import ExpertVectorUploader from './components/ExpertVectorUploader';
+import APIKeyValidator from './components/APIKeyValidator';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/vector" element={<VectorUploader />} />
         <Route path="/expert-scorer" element={<ExpertScorer />} />
         <Route path="/expert-vector" element={<ExpertVectorUploader />} />
+        <Route path="/api-status" element={<APIKeyValidator />} />
         <Route path="/expert/:id" element={<ExpertProfile />} />
         <Route path="/update/:id" element={<UpdateExpert />} />
       </Routes>
