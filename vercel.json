@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/groq/:path*", "destination": "https://api.groq.com/:path*" },
+    { "source": "/api/enrichlayer/:path*", "destination": "https://enrichlayer.com/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}
