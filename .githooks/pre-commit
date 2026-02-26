@@ -1,0 +1,21 @@
+#!/bin/sh
+# Block commits that add or modify .env or files under dist/ (secrets / inlined env in build)
+staged=$(git diff --cached --name-only)
+# Allow .env.example (template); block .env, .env.local, etc., and dist/
+blocked=$(echo "$staged" | grep -E '^dist/' ; echo "$staged" | grep -E '^\.env$|^\.env\.' | grep -v '^\.env\.example$')
+blocked=$(echo "$blocked" | grep .)
+if [ -n "$blocked" ]; then
+  echo ""
+  echo "ERROR: Commit blocked — do not commit secrets or build output."
+  echo ""
+  echo "  The following are staged and must be removed from the commit:"
+  echo "$blocked" | sed 's/^/    /'
+  echo ""
+  echo "  - .env contains API keys; keep it local only (see .env.example for a template)."
+  echo "  - dist/ is build output and can inline env vars; it is in .gitignore."
+  echo ""
+  echo "  Unstage with: git reset HEAD -- .env dist/"
+  echo ""
+  exit 1
+fi
+exit 0
