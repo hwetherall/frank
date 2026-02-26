@@ -5,7 +5,8 @@
       "WebFetch(domain:enrichlayer.com)",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(git:*)"
     ]
   }
 }
