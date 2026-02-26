@@ -16,13 +16,13 @@ export async function enrichProfile(linkedinUrl) {
   }
 
   const params = new URLSearchParams({
-    url: linkedinUrl,
+    profile_url: linkedinUrl,
     use_cache: 'if-present',
     fallback_to_cache: 'on-error',
     skills: 'include',
   });
 
-  const response = await fetch(`/api/enrichlayer/api/v2/linkedin?${params}`, {
+  const response = await fetch(`/api/enrichlayer/api/v2/profile?${params}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${ENRICHLAYER_API_KEY}`,
@@ -153,7 +153,7 @@ export async function getBalance() {
   }
 
   try {
-    const response = await fetch('/api/enrichlayer/api/credit-balance', {
+    const response = await fetch('/api/enrichlayer/api/v2/credit-balance', {
       headers: { 'Authorization': `Bearer ${ENRICHLAYER_API_KEY}` },
     });
 
