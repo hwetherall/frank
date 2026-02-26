@@ -1,0 +1,63 @@
+# Data files
+*.xlsx
+*.csv
+*.xls
+*.json
+*.xml
+*.txt
+*.log
+
+# Build outputs
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/
+
+# Environment and config files that might contain sensitive data
+.env*
+*.config.local.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+
+# Large binary files
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.zip
+*.tar.gz
+*.rar
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.mp4
+*.avi
+*.mov
+*.webm
+*.svg
+
+# Existing repomix output
+repomix-output.*

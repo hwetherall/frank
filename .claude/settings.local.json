@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:nubela.co)",
+      "WebFetch(domain:enrichlayer.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(npx vite:*)"
+    ]
+  }
+}
